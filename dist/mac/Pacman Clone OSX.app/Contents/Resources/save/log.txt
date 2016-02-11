@@ -1,0 +1,4 @@
+Plasmacore initializing
+Plasmacore configuring with default display size 1024x768
+Loading 32-bit textures.
+Plasmacore shutting down

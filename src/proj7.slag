@@ -1,0 +1,1981 @@
+singleton class GameScreen : Screen
+  PROPERTIES
+    play_timer	: Int32
+    ticks	: Int32
+    title : Logical
+
+  METHODS
+    method init
+      Images.set_up
+      Map.set_up
+      Game.set_up
+      Sounds.set_up
+      title = true
+      ticks = 0
+
+    method on_activate
+
+    method death_screen
+      push(DeathScreen())
+
+    method game_over
+      replace_with(GameOverScreen())
+
+    method update
+      ticks++
+      if(ticks >= 60) ticks = 0
+
+      if(title) return
+      if(not Game.locked) Game.update
+      if(not Sounds.start.is_playing and (play_timer == 0)) 
+        Game.locked = false
+        Sounds.start.volume(100)
+      endIf
+
+      if(play_timer > 0) play_timer--
+
+    method draw
+      if(title)
+        Images.title.draw(Display.center-Vector2(0, 100))
+        Game.font.handle = Handle.center
+        Game.font.draw("Implemented by Shea Orr", Display.center-Vector2(0, 25))
+        Game.font.draw("HIGH SCORE: "+Game.high_score, Display.center+Vector2(0, 75))
+        if(ticks < 30) Game.font.draw("Press ENTER", Display.center+Vector2(0, 100))
+        Game.font.handle = Handle.top_left
+        return
+      endIf
+      Game.draw
+      if(Game.locked and not Game.dead) Game.font.draw("Ready!", Vector2(176, 320))
+
+    method on( KeyEvent e )
+      if (e.is_press(Key.keycode_escape)) 
+        GameOverScreen.save_score
+        System.exit
+      endIf
+      if(e.is_press(Key.keycode_enter))
+        Sounds.start.play
+        title = false
+      endIf
+
+endClass
+
+singleton class GameOverScreen : Screen
+  PROPERTIES
+
+  METHODS
+    method on_activate
+      save_score
+
+    method draw
+      Game.font.handle = Handle.center
+      Game.font.draw("Game Over", Display.center-Vector2(0, 100))
+      Game.font.draw(""+Game.points, Display.center-Vector2(0, 50))
+      if(Game.points >= Game.high_score) 
+        Game.font.draw("New High Score!", Display.center-Vector2(0, 0))
+      endIf
+      Game.font.handle = Handle.top_left
+
+    method save_score
+      if(Game.points >= Game.high_score)
+        local DataFile outfile("high_score.txt")
+        local var writer = outfile.create_writer
+        writer.println(Game.points)
+        writer.close
+      endIf
+
+    method on( KeyEvent e )
+      if (e.is_press(Key.keycode_escape)) 
+        System.exit
+      endIf
+
+endClass
+
+singleton class DeathScreen : Screen
+  PROPERTIES
+    position : Vector2
+
+    #Sprite stuff
+    img	      : Image[]
+    frame     : Int32
+    delta     : Real64
+    progress  : Real64
+
+  METHODS
+    method init
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+    method on_activate
+      Sounds.dead.play
+
+    method draw
+      Map.draw
+      Game.draw_interface
+
+      if(frame <= 10) Images.pacman_death[frame].draw(Game.death_pos)
+
+      #Sprite stuff
+      if(progress >= 1) 
+        frame++
+        progress = 0
+      endIf
+
+    method update
+      progress += delta
+      if(frame >= 13) 
+        if(Game.lives == 0) 
+          pop
+          GameScreen.game_over
+        else 
+          pop
+        endIf
+      endIf
+
+endClass
+
+singleton class Map
+  PROPERTIES
+    tiles() : Tile[]
+    sidetiles() : Tile[]
+
+  METHODS
+    method set_up
+      local Int32 x = 8
+      local Int32 y = 8
+
+      local Int32 i
+      while(i < Images.map.count)
+        tiles.add(Tile(Vector2(x, y), Images.map[i]))
+        x+=16
+        if(x == 456)
+          x = 8
+          y += 16
+        endIf
+        i++
+      endWhile
+
+      #Set passable tiles
+
+      #Row 5
+      local Int32 j = 2
+      local Int32 row = 5
+      while(j <= 13)
+        set_passable(j, row)
+        set_passable(j+14, row)
+        set_pill(j, row)
+        set_pill(j+14, row)
+        j++
+      endWhile
+
+      #Rows 6-8
+      row = 6
+      while(row <= 8)
+        set_passable(2, row)
+        set_passable(7, row)
+        set_passable(13, row)
+        set_passable(16, row)
+        set_passable(22, row)
+        set_passable(27, row)
+        set_pill(2, row)
+        set_pill(7, row)
+        set_pill(13, row)
+        set_pill(16, row)
+        set_pill(22, row)
+        set_pill(27, row)
+        row++
+      endWhile
+
+      #Row 9
+      row = 9
+      j = 2
+      while(j <= 27)
+        set_passable(j, row)
+        set_pill(j, row)
+        j++
+      endWhile
+
+      #Row 10-11
+      row = 10
+      while(row <= 11)
+        set_passable(2, row)
+        set_passable(7, row)
+        set_passable(10, row)
+        set_passable(19, row)
+        set_passable(22, row)
+        set_passable(27, row)
+        set_pill(2, row)
+        set_pill(7, row)
+        set_pill(10, row)
+        set_pill(19, row)
+        set_pill(22, row)
+        set_pill(27, row)
+        row++
+      endWhile
+
+      #Row 12
+      j = 2
+      row = 12
+      while(j <= 7)
+        set_passable(j, row)
+        set_passable(j+20, row)
+        set_pill(j, row)
+        set_pill(j+20, row)
+        j++
+      endWhile
+      j = 10
+      while(j <= 13)
+        set_passable(j, row)
+        set_passable(j+6, row)
+        set_pill(j, row)
+        set_pill(j+6, row)
+        j++
+      endWhile
+
+      #Row 13-14
+      row = 13
+      while(row <= 14)
+        set_passable(7, row)
+        set_passable(13, row)
+        set_passable(16, row)
+        set_passable(22, row)
+        row++
+      endWhile
+
+      #Row 15
+      row = 15
+      set_passable(7, row)
+      set_passable(22, row)
+      j = 10
+      while(j <= 19)
+        set_passable(j, row)
+        j++
+      endWhile
+
+      #Row 16-17
+      row = 16
+      while(row <= 17)
+        set_passable(7, row)
+        set_passable(10, row)
+        set_passable(19, row)
+        set_passable(22, row)
+        row++
+      endWhile
+
+      #Row 18
+      row = 18
+      j = 1
+      while(j <= 10)
+        set_passable(j, row)
+        set_passable(j+18, row)
+        j++
+      endWhile
+
+      #Row 19-20
+      row = 19
+      while(row <= 20)
+        set_passable(7, row)
+        set_passable(10, row)
+        set_passable(19, row)
+        set_passable(22, row)
+        row++
+      endWhile
+
+      #Row 21
+      row = 21
+      set_passable(7, row)
+      set_passable(22, row)
+      j = 10
+      while(j <= 19)
+        set_passable(j, row)
+        j++
+      endWhile
+
+      #Row 22-23
+      row = 22
+      while(row <= 23)
+        set_passable(7, row)
+        set_passable(10, row)
+        set_passable(19, row)
+        set_passable(22, row)
+        row++
+      endWhile
+
+      #Row 24
+      row = 24
+      j = 2
+      while(j <= 13)
+        set_passable(j, row)
+        set_passable(j+14, row)
+        set_pill(j, row)
+        set_pill(j+14, row)
+        j++
+      endWhile
+
+      #Row 25-26
+      row = 25
+      while(row <= 26)
+        set_passable(2, row)
+        set_passable(7, row)
+        set_passable(13, row)
+        set_passable(16, row)
+        set_passable(22, row)
+        set_passable(27, row)
+        set_pill(2, row)
+        set_pill(7, row)
+        set_pill(13, row)
+        set_pill(16, row)
+        set_pill(22, row)
+        set_pill(27, row)
+        row++
+      endWhile
+
+      #Row 27
+      row = 27
+      j = 2
+      while(j <= 4)
+        set_passable(j, row)
+        set_passable(j+23, row)
+        set_pill(j, row)
+        set_pill(j+23, row)
+        j++
+      endWhile
+      j = 7
+      while(j <= 22)
+        set_passable(j, row)
+        set_pill(j, row)
+        j++
+      endWhile
+      set_no_pill(14, row)
+      set_no_pill(15, row)
+
+      #Row 28-29
+      row = 28
+      while(row <= 29)
+        set_passable(4, row)
+        set_passable(7, row)
+        set_passable(10, row)
+        set_passable(19, row)
+        set_passable(22, row)
+        set_passable(25, row)
+        set_pill(4, row)
+        set_pill(7, row)
+        set_pill(10, row)
+        set_pill(19, row)
+        set_pill(22, row)
+        set_pill(25, row)
+        row++
+      endWhile
+
+      #Row 30
+      j = 2
+      row = 30
+      while(j <= 7)
+        set_passable(j, row)
+        set_passable(j+20, row)
+        set_pill(j, row)
+        set_pill(j+20, row)
+        j++
+      endWhile
+      j = 10
+      while(j <= 13)
+        set_passable(j, row)
+        set_passable(j+6, row)
+        set_pill(j, row)
+        set_pill(j+6, row)
+        j++
+      endWhile
+
+      #Row 31-32
+      row = 31
+      while(row <= 32)
+        set_passable(2, row)
+        set_passable(13, row)
+        set_passable(16, row)
+        set_passable(27, row)
+        set_pill(2, row)
+        set_pill(13, row)
+        set_pill(16, row)
+        set_pill(27, row)
+        row++
+      endWhile
+
+      #Row 33!
+      row = 33
+      j = 2
+      while(j <= 27)
+        set_passable(j, row)
+        set_pill(j, row)
+        j++
+      endWhile
+
+      #Setting addition pills...
+      row = 13
+      j = 7
+      while(row <= 26)
+        set_pill(j, row)
+        set_pill(j+15, row)
+        row++
+      endWhile
+
+      #Set power pills
+      set_power_pill(2, 7)
+      set_power_pill(27, 7)
+      set_power_pill(2, 27)
+      set_power_pill(27, 27)
+
+      #Add side tiles
+      local Tile leftSide1 = Tile(Vector2(-8, 280), Images.map[0])
+      leftSide1.set_passable
+      sidetiles.add(leftSide1)
+
+      local Tile leftSide2 = Tile(Vector2(-24, 280), Images.map[0])
+      sidetiles.add(leftSide2)
+
+      local Tile rightSide1 = Tile(Vector2(456, 280), Images.map[0])
+      rightSide1.set_passable
+      sidetiles.add(rightSide1)
+
+      local Tile rightSide2 = Tile(Vector2(472, 280), Images.map[0])
+      sidetiles.add(rightSide2)
+
+      #Decision tiles
+      set_decision(2, 5)
+      set_decision(7, 5)
+      set_decision(13, 5)
+      set_decision(16, 5)
+      set_decision(22, 5)
+      set_decision(27, 5)
+
+      set_decision(2, 9)
+      set_decision(7, 9)
+      set_decision(10, 9)
+      set_decision(13, 9)
+      set_decision(16, 9)
+      set_decision(19, 9)
+      set_decision(22, 9)
+      set_decision(27, 9)
+
+      set_decision(2, 12)
+      set_decision(7, 12)
+      set_decision(10, 12)
+      set_decision(13, 12)
+      set_decision(16, 12)
+      set_decision(19, 12)
+      set_decision(22, 12)
+      set_decision(27, 12)
+
+      set_decision(10, 15)
+      set_decision(13, 15)
+      set_decision(16, 15)
+      set_decision(19, 15)
+
+      set_decision(7, 18)
+      set_decision(10, 18)
+      set_decision(19, 18)
+      set_decision(22, 18)
+
+      set_decision(10, 21)
+      set_decision(13, 21)
+      set_decision(16, 21)
+      set_decision(19, 21)
+
+      set_decision(2, 24)
+      set_decision(7, 24)
+      set_decision(10, 24)
+      set_decision(13, 24)
+      set_decision(16, 24)
+      set_decision(19, 24)
+      set_decision(22, 24)
+      set_decision(27, 24)
+
+      set_decision(2, 27)
+      set_decision(4, 27)
+      set_decision(7, 27)
+      set_decision(10, 27)
+      set_decision(13, 27)
+      set_decision(16, 27)
+      set_decision(19, 27)
+      set_decision(22, 27)
+      set_decision(25, 27)
+      set_decision(27, 27)
+
+      set_decision(2, 30)
+      set_decision(4, 30)
+      set_decision(7, 30)
+      set_decision(10, 30)
+      set_decision(13, 30)
+      set_decision(16, 30)
+      set_decision(19, 30)
+      set_decision(22, 30)
+      set_decision(25, 30)
+      set_decision(27, 30)
+
+      set_decision(2, 33)
+      set_decision(13, 33)
+      set_decision(16, 33)
+      set_decision(27, 33)
+
+      set_slow(0, 18)
+      set_slow(1, 18)
+      set_slow(2, 18)
+      set_slow(3, 18)
+      set_slow(4, 18)
+      set_slow(5, 18)
+
+      set_slow(24, 18)
+      set_slow(25, 18)
+      set_slow(26, 18)
+      set_slow(27, 18)
+      set_slow(28, 18)
+      set_slow(29, 18)
+
+      set_home(14, 15)
+      set_home(15, 15)
+      set_home(14, 16)
+      set_home(15, 16)
+      set_home(14, 17)
+      set_home(15, 17)
+      set_home(14, 18)
+      set_home(15, 18)
+      set_decision(14, 15)
+      set_decision(15, 15)
+
+    method replace_pills
+      forEach(t in tiles)
+        t.replace_pill
+      endForEach
+
+    method get_tile_above(Tile t).Tile
+      return get_tile_at(t.position + Vector2(0, -16))
+
+    method get_tile_below(Tile t).Tile
+      return get_tile_at(t.position + Vector2(0, 16))
+
+    method get_tile_left_of(Tile t).Tile
+      return get_tile_at(t.position + Vector2(-16, 0))
+
+    method get_tile_right_of(Tile t).Tile
+      return get_tile_at(t.position + Vector2(16, 0))
+
+    method get_tile_at(Vector2 pos).Tile
+      forEach(tile in tiles)
+        if(tile.box.contains(pos)) return tile
+      endForEach
+      forEach(tile in sidetiles)
+        if(tile.box.contains(pos)) return tile
+      endForEach
+
+      return null
+
+    method set_slow(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_slow
+
+    method set_home(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_home
+
+    method set_passable(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_passable
+
+    method set_no_pill(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_no_pill
+
+    method set_pill(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_pill
+
+    method set_power_pill(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_power_pill
+
+    method set_decision(Int32 x, Int32 y)
+      x--
+      y--
+      if((x >= 28) or (y >= 36)) return
+      local Int32 index = (y*28) + x
+      tiles.get(index).set_decision
+
+    method draw
+      forEach(tile in tiles)
+        tile.draw
+      endForEach
+
+    method update
+
+endClass
+
+class ShowPoints
+  PROPERTIES
+    position : Vector2
+    amnt     : Int32
+    counter  : Int32
+
+  METHODS
+    method init(position, amnt)
+      counter = 130
+
+    method draw
+      Game.font.handle = Handle.center
+      Game.font.draw(""+amnt, position)
+      Game.font.handle = Handle.top_left
+
+    method update
+      if(counter > 0) counter--
+
+endClass
+
+singleton class Game
+  PROPERTIES
+    font        : Font
+    points	: Int32
+    high_score	: Int32
+    lives	: Int32
+    level	: Int32
+    debug	: Logical
+    locked : Logical
+    ticks	: Int32
+    scared_time : Int32
+    doubler : Int32
+    just_ate : Int32
+    ghost_speed : Int32
+    eat_time : Int32
+    pills_left : Int32
+    curr_sound : Int32
+    beat_timer : Int32
+    dead	: Logical
+    cherry_eaten : Logical
+    num_cherries : Int32
+    life_count : Int32
+    death_pos	: Vector2
+    cherry : Image
+
+    show_points() : ShowPoints[]
+
+    #Characters
+    pacman      : Pacman
+    ghosts()    : Ghost[]
+    blinky      : Blinky
+    pinky       : Pinky
+    inky        : Inky
+    clyde       : Clyde
+
+  METHODS
+    method init
+      load_high_score
+      points = 0
+      lives = 4
+      level = 1
+      ticks = 0
+      life_count = 1
+      pills_left = 244
+      eat_time = 0
+      ghost_speed = 1.8
+      doubler = 1
+      scared_time = 400
+      debug = false
+      locked = true
+      curr_sound = -1
+      pacman = Pacman(Vector2(223, 424))
+      blinky = Blinky(Vector2(225, 232), "Blinky")
+      pinky = Pinky(Vector2(225, 280), "Pinky")
+      inky = Inky(Vector2(192, 280), "Inky")
+      clyde = Clyde(Vector2(256, 280), "Clyde")
+      ghosts.add(blinky)
+      ghosts.add(pinky)
+      ghosts.add(inky)
+      ghosts.add(clyde)
+
+      #Font stuff
+      font = Font("font.png")
+      font.scale = 1
+
+    method give_life
+      lives++
+      Sounds.life.play
+      life_count++
+
+    method load_high_score
+      local DataFile file("high_score.txt")
+      if(file.exists)
+        local Scanner scanner(file)
+        high_score = scanner.scan_Int32
+      endIf
+
+    method next_level
+      stop_all_sounds
+      show_points.clear
+      cherry = null
+      cherry_eaten = false
+      sleep(1000)
+      locked = true
+      beat_timer = 100
+      pills_left = 246
+
+    method go_next
+      level++
+      forEach(g in ghosts)
+        g.scared = 0
+      endForEach
+      beat_timer--
+      Map.replace_pills
+      reset
+
+    method kill_pacman
+      stop_all_sounds
+      death_pos = pacman.position
+      cherry = null
+      cherry_eaten = true
+      GameScreen.death_screen
+      reset
+
+    method reset
+      stop_all_sounds
+      locked = true
+      sleep(1000)
+      ticks = 0
+      eat_time = 0
+      ghost_speed = 1.8
+      doubler = 1
+      scared_time = 400
+      curr_sound = -1
+      GameScreen.play_timer = 130
+      pacman.init(Vector2(223, 424))
+      blinky.init(Vector2(225, 232), "Blinky")
+      blinky.eyes = false
+      pinky.init(Vector2(225, 280), "Pinky")
+      pinky.eyes = false
+      inky.init(Vector2(192, 280), "Inky")
+      inky.eyes = false
+      blinky.release = false
+      clyde.init(Vector2(256, 280), "Clyde")
+      clyde.eyes = false
+      blinky.release = false
+      set_up
+
+    method eat_pill
+      eat_time = 10
+      if(points > high_score) high_score = points
+      if(life_count*10000 < points) give_life
+
+    method scare_ghosts(Int32 time)
+      forEach(g in ghosts)
+        if(not g.eyes)
+          g.dec_timer = 0
+          g.change_dir
+          g.scared += time
+        endIf
+      endForEach
+
+    method eat_ghost(Ghost g)
+      points += 200 * doubler
+      show_points.add(ShowPoints(g.position, 200*doubler))
+      if(high_score < points) high_score = points
+      if(life_count*10000 < points) give_life
+      doubler *= 2
+      just_ate = 50
+      g.just_eaten
+      Sounds.eat_ghost.play
+
+    method eat_cherry
+      points += 200 * level
+      show_points.add(ShowPoints(Vector2(224, 328), 200*level))
+      if(high_score < points) high_score = points
+      if(life_count*10000 < points) give_life
+      just_ate = 50
+      Sounds.eat_cherry.play
+      cherry_eaten = true
+      num_cherries++
+      cherry = null
+
+    method set_up
+      blinky.img = Images.blinky
+      blinky.scared = 0
+      blinky.release = true
+      blinky.in_jail = false
+      pinky.img = Images.pinky
+      inky.img = Images.inky
+      inky.scared = 0
+      inky.release = false
+      clyde.img = Images.clyde
+      clyde.scared = 0
+      clyde.release = false
+      pinky.release = true
+      pinky.scared = 0
+
+    method draw_interface
+      font.draw("1UP   "+points, Vector2(16, 0))
+      font.draw("HIGH    "+high_score, Vector2(240, 0))
+
+      Images.cherry.draw(Vector2(380, 560))
+      font.draw("X"+num_cherries, Vector2(396, 550))
+
+      local Int32 x = 16
+      forEach(1..lives-1)
+        Images.pacman[13].draw(Vector2(x, 560))
+        x += 25
+      endForEach
+
+    method draw
+      if(beat_timer > 0) 
+        if(GameScreen.ticks < 15) 
+          Map.draw
+        elseIf(GameScreen.ticks < 30)
+          Images.mapwhite.draw(Vector2(0, 0))
+        elseIf(GameScreen.ticks < 45)
+          Map.draw
+        else
+          Images.mapwhite.draw(Vector2(0, 0))
+        endIf
+        if(beat_timer == 1) 
+          go_next
+        endIf
+        beat_timer--
+        return
+      else
+        Map.draw
+      endIf
+      draw_interface
+
+      pacman.draw
+      forEach(g in ghosts)
+        g.draw
+      endForEach
+
+      forEach(poi in show_points)
+        if(poi.counter > 0) poi.draw
+      endForEach
+
+      if(not (cherry==null)) cherry.draw(Vector2(224, 328))
+
+    method update
+      if(beat_timer > 0) return
+      if(eat_time > 0) 
+        Sounds.eat.play
+        eat_time--
+      else
+        Sounds.eat.pause
+      endIf
+
+      #Movement
+      if (Input.key_state[Key.keycode_a])
+        pacman.next_left
+      elseIf (Input.key_state[Key.keycode_d])
+        pacman.next_right
+      elseIf (Input.key_state[Key.keycode_w])
+        pacman.next_up
+      elseIf (Input.key_state[Key.keycode_s])
+        pacman.next_down
+      else
+        pacman.next_blank
+      endIf
+
+      if(ticks < 60) ticks++
+      if(ticks >= 60) ticks = 0
+
+      if(just_ate > 0) just_ate--
+
+      pacman.update
+
+      forEach(g in ghosts)
+        g.update
+      endForEach
+
+      forEach(poi in show_points)
+        poi.update
+      endForEach
+
+      local Logical scared_flag
+      local Logical eyes_flag
+      forEach(g in ghosts)
+        if(g.scared > 0) scared_flag = true
+        if(g.eyes) eyes_flag = true
+      endForEach	
+      if(not scared_flag) doubler = 1
+
+      #Sounds
+      if(eyes_flag)
+        sound_play(0)
+      elseIf(scared_flag)
+        sound_play(1)
+      elseIf(pills_left > 183)
+        sound_play(2)
+      elseIf(pills_left > 122)
+        sound_play(3)
+      elseIf(pills_left > 61)
+        sound_play(4)
+      else
+        sound_play(5)
+      endIf
+
+      if(pills_left <= 180) inky.release = true
+      if(pills_left <= 100 and not (inky.in_jail)) clyde.release = true
+      if(pills_left <= 50) show_cherry
+
+      #Check collisions
+      forEach(ghost in ghosts)
+        if(pacman.center_circle.intersects(ghost.center_circle))
+          if(ghost.scared > 0) 
+            eat_ghost(ghost)
+          elseIf(not ghost.eyes and (pacman.dec_timer == 0))
+            kill_pacman
+            lives--
+          endIf 
+        endIf
+      endForEach
+      if(not (cherry == null))
+        if(pacman.center_circle.intersects(cherry.bounding_box))
+          eat_cherry
+        endIf
+      endIf
+
+      #Check win
+      if(pills_left == 0)
+        next_level
+      endIf
+
+    method show_cherry
+      if(not (cherry_eaten)) cherry = Images.cherry
+
+    method sound_play(Int32 new_sound)
+      if(curr_sound == new_sound) 
+        return
+      endIf
+      sound_stop
+      which(new_sound)
+        case 0: Sounds.ghost_return.play
+        case 1: Sounds.scared.play
+        case 2: Sounds.bg1.play
+        case 3: Sounds.bg2.play
+        case 4: Sounds.bg3.play
+        case 5: Sounds.bg4.play
+          others:	
+      endWhich
+      curr_sound = new_sound
+
+    method sound_stop
+      which(curr_sound)
+        case 0: Sounds.ghost_return.stop
+        case 1: Sounds.scared.stop
+        case 2: Sounds.bg1.stop
+        case 3: Sounds.bg2.stop
+        case 4: Sounds.bg3.stop
+        case 5: Sounds.bg4.stop
+          others:	
+      endWhich
+
+    method stop_all_sounds
+      Sounds.ghost_return.stop
+      Sounds.scared.stop
+      Sounds.bg1.stop
+      Sounds.bg2.stop
+      Sounds.bg3.stop
+      Sounds.bg4.stop
+      Sounds.eat.stop
+
+endClass
+
+class Ghost
+  PROPERTIES
+    position  : Vector2
+    velocity  : Vector2
+    direction : Int32
+    curr_tile : Tile
+    speed     : Real64
+    dec_timer : Int32
+    scared    : Int32
+    in_jail   : Logical
+    release   : Logical
+    eyes      : Logical
+    name      : String
+
+    #Sprite stuff
+    img       : Image[]
+    frame     : Int32
+    delta     : Real64
+    progress  : Real64
+
+  METHODS
+    method init(position, name)
+      direction = 0
+      speed = Game.ghost_speed
+      frame = 0
+      progress = 0
+
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+    method center_circle.Circle
+      return Circle(position-Vector2(2, 0), 8)
+
+    method reset
+      speed = Game.ghost_speed
+      scared = 0
+      eyes = false
+      in_jail = true
+      release = true
+      pace
+
+    method update
+      #Move
+      if(Game.just_ate == 0) 
+        position += velocity
+      elseIf(eyes) 
+        position += velocity
+      endIf
+
+      #Decriment dec_timer
+      if(dec_timer > 0) dec_timer--
+
+      #Decriment scared
+      if((scared > 0) and (Game.just_ate == 0)) scared--
+
+      #Get new current tile
+      curr_tile = Map.get_tile_at(position)
+
+      if(curr_tile ==  null)
+        position = Vector2(225, 232)
+        curr_tile = Map.get_tile_at(position)
+        move(2)
+      endIf
+
+      #Check that curr tile isnt a side tile
+      forEach(tile in Map.sidetiles)
+        if(curr_tile == tile)
+          if(curr_tile.center.contains(position)) teleport 
+        endIf
+      endForEach
+
+      if(eyes)
+        if(dec_timer == 0)
+          if((curr_tile.decision) and (curr_tile.center.contains(position))) 
+            blinky_movement
+          elseIf(curr_tile.home)
+            if((position.x <= 226) and (position.x >= 222))
+              if(position.y < 280) 
+                if(not (direction == 1)) move(1)
+              else 
+                reset
+              endIf
+            endIf
+          endIf
+        endIf
+        return
+      endIf
+
+      if(in_jail)
+        pace
+        return
+      endIf
+
+      #Slow speed if going through teleporter
+      if(curr_tile.slow and speed > 0.9)
+        speed = .9
+        move(direction)
+      elseIf(not curr_tile.slow and (speed < Game.ghost_speed) and (scared == 0))
+        speed = Game.ghost_speed
+        move(direction)
+      endIf
+
+      #Slow speed if scared
+      if(scared > 0 and speed > 0.8)
+        speed = 0.8
+        move(direction)
+      elseIf((scared == 0) and not curr_tile.slow)
+        if(not (speed == Game.ghost_speed))
+          speed = Game.ghost_speed
+          move(direction)
+        endIf
+      endIf
+
+      #Sprite stuff
+      progress += delta
+
+      #Decide next movement
+      if(dec_timer == 0)
+        if((curr_tile.decision) and (curr_tile.center.contains(position))) decide_movement
+      endIf
+
+    method just_eaten
+      scared = 0
+      speed = 2.8
+      if(curr_tile.slow) change_dir
+      move(direction)
+      eyes = true
+
+    method pace
+      speed = 0.8
+      if(release)
+        if(position.x < 224) 
+          move(3)
+        elseIf(position.x > 226)
+          move(2)
+        else
+          move(0)
+          if(position.y <= 232) 
+            move(random_Int32(2, 3))
+            in_jail = false
+          endIf
+        endIf
+        return
+      else
+        if(position.y < 270) 
+          move(1)
+        endIf
+        if(position.y > 288) 
+          move(0)
+        endIf
+      endIf
+
+    method change_dir
+      which(direction)
+        case 0: move(1)
+        case 1: move(0)
+        case 2: move(3)
+        case 3: move(2)
+          others: #blank
+      endWhich
+
+      dec_timer = 0
+
+    method decide_movement
+
+    method blinky_movement
+      local Tile above  = Map.get_tile_above(curr_tile)
+      local Tile below  = Map.get_tile_below(curr_tile)
+      local Tile left = Map.get_tile_left_of(curr_tile)
+      local Tile right  = Map.get_tile_right_of(curr_tile)
+
+      which(direction)
+        case 0: below = null
+        case 1: above = null
+        case 2: right = null
+        case 3: left = null
+          others:
+      endWhich
+
+      local Distance[] distances()
+      local Vector2 pos = Vector2(224, 232)
+
+      if(not (above == null))
+        if(above.passable)
+          local Line l = Line(pos, above.position)
+          distances.add(Distance(0, l.length))
+        endIf
+      endIf
+      if(not (below == null))
+        if(below.passable)
+          local Line l = Line(pos, below.position)
+          distances.add(Distance(1, l.length))
+        endIf
+      endIf
+      if(not (left == null))
+        if(left.passable)
+          local Line l = Line(pos, left.position)
+          distances.add(Distance(2, l.length))
+        endIf
+      endIf
+      if(not (right == null))
+        if(right.passable)
+          local Line l = Line(pos, right.position)
+          distances.add(Distance(3, l.length))
+        endIf
+      endIf
+
+      local Distance smallest = Distance(-1, 9999)
+      forEach(dist in distances)
+        if(dist.distance < smallest.distance) smallest = dist
+      endForEach
+
+      move(smallest.dir)
+      dec_timer = 3
+
+    method draw
+      if(scared > 0) 
+        if(scared < 125) 
+          if(Game.ticks < 15) 
+            Images.scared[frame].draw(position)
+          elseIf(Game.ticks < 30)
+            Images.white[frame].draw(position)
+          elseIf(Game.ticks < 45)
+            Images.scared[frame].draw(position)
+          else
+            Images.white[frame].draw(position)
+          endIf
+        else
+          Images.scared[frame].draw(position)
+        endIf
+      elseIf(eyes) 
+        Images.eyes[frame].draw(position)
+      else 
+        img[frame].draw(position)
+      endIf
+
+      #Sprite stuff
+      if(progress >= 1) 
+        frame++
+        progress = 0
+      endIf
+
+      which(direction)
+        case 0: if(frame >= 4) frame = 0
+        case 1: if(frame >= 8) frame = 4
+        case 2: if(frame >= 12) frame = 8
+        case 3: if(frame >= 16) frame  = 12
+          others: frame = 0
+      endWhich
+
+      if(frame >= 16) frame = 0
+
+    method move(Int32 dir)
+      which(dir)
+        case 0: 
+          velocity = Vector2(0, -speed)
+          frame = 0
+        case 1: 
+          velocity = Vector2(0, speed)
+          frame = 4
+        case 2: 
+          velocity = Vector2(-speed, 0)
+          frame = 8
+        case 3: 
+          velocity = Vector2(speed, 0)
+          frame = 12
+          others: 
+          velocity = Vector2(0, 0)
+          frame = 0
+      endWhich
+      direction = dir
+
+    method teleport
+      #Brute force which tile we're in
+      if(position.x < 0)
+        position = Vector2(455, 280)
+      else
+        position = Vector2(-7, 280)
+      endIf
+
+endClass
+
+class Clyde : Ghost
+  PROPERTIES
+
+  METHODS
+    method init(position, name)
+      direction = 0
+      speed = Game.ghost_speed
+      frame = 0
+      progress = 0
+      in_jail = true
+
+      move(1)
+
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+    method decide_movement
+      local Tile above	= Map.get_tile_above(curr_tile)
+      local Tile below	= Map.get_tile_below(curr_tile)
+      local Tile left	= Map.get_tile_left_of(curr_tile)
+      local Tile right	= Map.get_tile_right_of(curr_tile)
+
+      which(direction)
+        case 0: below = null
+        case 1: above = null
+        case 2: right = null
+        case 3: left = null
+          others:
+      endWhich
+
+      local Distance[] distances()
+      local Vector2 pos
+
+      local Line line = Line(Game.pacman.position, position)
+      if(line.length < 128)
+        pos = Vector2(24, 552)
+      else
+        pos = Game.pacman.position
+      endIf
+
+      if(not (above == null))
+        if(above.passable)
+          local Line l = Line(pos, above.position)
+          distances.add(Distance(0, l.length))
+        endIf
+      endIf
+      if(not (below == null))
+        if(below.passable)
+          local Line l = Line(pos, below.position)
+          distances.add(Distance(1, l.length))
+        endIf
+      endIf
+      if(not (left == null))
+        if(left.passable)
+          local Line l = Line(pos, left.position)
+          distances.add(Distance(2, l.length))
+        endIf
+      endIf
+      if(not (right == null))
+        if(right.passable)
+          local Line l = Line(pos, right.position)
+          distances.add(Distance(3, l.length))
+        endIf
+      endIf
+
+      local Distance smallest = Distance(-1, 9999)
+      forEach(dist in distances)
+        if(dist.distance < smallest.distance) smallest = dist
+      endForEach
+
+      if(scared > 0) move(distances.random.dir)
+      else move(smallest.dir)
+      dec_timer = 10
+
+endClass
+
+class Inky : Ghost
+  PROPERTIES
+
+  METHODS
+    method init(position, name)
+      direction = 0
+      speed = Game.ghost_speed
+      frame = 0
+      progress = 0
+      in_jail = true
+
+      move(1)
+
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+    method decide_movement
+      local Tile above	= Map.get_tile_above(curr_tile)
+      local Tile below	= Map.get_tile_below(curr_tile)
+      local Tile left	= Map.get_tile_left_of(curr_tile)
+      local Tile right	= Map.get_tile_right_of(curr_tile)
+
+      which(direction)
+        case 0: below = null
+        case 1: above = null
+        case 2: right = null
+        case 3: left = null
+          others:
+      endWhich
+
+      local Distance[] distances()
+
+      #Get twice the distance between blinky and pacman
+      local Line line = Line(Game.pacman.position, Game.blinky.position)
+      line *= 2
+      local Vector2 pos = line.midpoint
+
+      if(not (above == null))
+        if(above.passable)
+          local Line l = Line(pos, above.position)
+          distances.add(Distance(0, l.length))
+        endIf
+      endIf
+      if(not (below == null))
+        if(below.passable)
+          local Line l = Line(pos, below.position)
+          distances.add(Distance(1, l.length))
+        endIf
+      endIf
+      if(not (left == null))
+        if(left.passable)
+          local Line l = Line(pos, left.position)
+          distances.add(Distance(2, l.length))
+        endIf
+      endIf
+      if(not (right == null))
+        if(right.passable)
+          local Line l = Line(pos, right.position)
+          distances.add(Distance(3, l.length))
+        endIf
+      endIf
+
+      local Distance smallest = Distance(-1, 9999)
+      forEach(dist in distances)
+        if(dist.distance < smallest.distance) smallest = dist
+      endForEach
+
+      if(scared > 0) move(distances.random.dir)
+      else move(smallest.dir)
+      dec_timer = 10
+
+endClass
+
+class Blinky : Ghost
+    method init(position, name)
+      direction = 0
+      speed = Game.ghost_speed
+      frame = 0
+      progress = 0
+
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+      #Blinky
+      move(2)
+
+    method decide_movement
+      local Tile above	= Map.get_tile_above(curr_tile)
+      local Tile below	= Map.get_tile_below(curr_tile)
+      local Tile left	= Map.get_tile_left_of(curr_tile)
+      local Tile right	= Map.get_tile_right_of(curr_tile)
+
+      which(direction)
+        case 0: below = null
+        case 1: above = null
+        case 2: right = null
+        case 3: left = null
+          others:
+      endWhich
+
+      local Distance[] distances()
+
+      if(not (above == null))
+        if(above.passable)
+          local Line l = Line(Game.pacman.position, above.position)
+          distances.add(Distance(0, l.length))
+        endIf
+      endIf
+      if(not (below == null))
+        if(below.passable)
+          local Line l = Line(Game.pacman.position, below.position)
+          distances.add(Distance(1, l.length))
+        endIf
+      endIf
+      if(not (left == null))
+        if(left.passable)
+          local Line l = Line(Game.pacman.position, left.position)
+          distances.add(Distance(2, l.length))
+        endIf
+      endIf
+      if(not (right == null))
+        if(right.passable)
+          local Line l = Line(Game.pacman.position, right.position)
+          distances.add(Distance(3, l.length))
+        endIf
+      endIf
+
+      local Distance smallest = Distance(-1, 9999)
+      forEach(dist in distances)
+        if(dist.distance < smallest.distance) smallest = dist
+      endForEach
+
+      move(smallest.dir)
+      dec_timer = 10
+
+endClass
+
+class Pinky : Ghost
+  PROPERTIES
+
+  METHODS
+    method init(position, name)
+      direction = 0
+      speed = Game.ghost_speed
+      frame = 0
+      progress = 0
+      in_jail = true
+
+      #Sprite stuff
+      local Real64 duration = 8.0/60.0
+      delta = 1.0/(duration * 60)
+
+      #Pinky
+      move(1)
+
+    method decide_movement
+      local Tile above	= Map.get_tile_above(curr_tile)
+      local Tile below	= Map.get_tile_below(curr_tile)
+      local Tile left	= Map.get_tile_left_of(curr_tile)
+      local Tile right	= Map.get_tile_right_of(curr_tile)
+
+      which(direction)
+        case 0: below = null
+        case 1: above = null
+        case 2: right = null
+        case 3: left = null
+          others:
+      endWhich
+
+      local Distance[] distances()
+
+      #Get 4 spaces ahead of pacman
+      local Vector2 pos = Game.pacman.position
+      which(Game.pacman.direction)
+        case 0: pos += Vector2(-64, -64)
+        case 1: pos += Vector2(0, 64)
+        case 2: pos += Vector2(-64, 0)
+        case 3: pos += Vector2(64, 0)
+          others:
+      endWhich
+
+      if(not (above == null))
+        if(above.passable)
+          local Line l = Line(pos, above.position)
+          distances.add(Distance(0, l.length))
+        endIf
+      endIf
+      if(not (below == null))
+        if(below.passable)
+          local Line l = Line(pos, below.position)
+          distances.add(Distance(1, l.length))
+        endIf
+      endIf
+      if(not (left == null))
+        if(left.passable)
+          local Line l = Line(pos, left.position)
+          distances.add(Distance(2, l.length))
+        endIf
+      endIf
+      if(not (right == null))
+        if(right.passable)
+          local Line l = Line(pos, right.position)
+          distances.add(Distance(3, l.length))
+        endIf
+      endIf
+
+      local Distance smallest = Distance(-1, 9999)
+      forEach(dist in distances)
+        if(dist.distance < smallest.distance) smallest = dist
+      endForEach
+
+      if(scared > 0) move(distances.random.dir)
+      else move(smallest.dir)
+      dec_timer = 10
+
+endClass
+
+class Pacman
+  PROPERTIES
+    position  : Vector2
+    velocity  : Vector2
+    direction : Int32
+    next_dir  : Int32
+    curr_tile : Tile
+    moving    : Logical
+    speed     : Real64
+    start     : Logical
+    dec_timer : Int32
+
+    #Sprite stuff
+    frame     : Int32
+    progress  : Real64
+    delta     : Real64
+
+  METHODS
+    method init(position) 
+      next_dir = -1
+      direction = 0
+      moving = false
+      start = true
+      speed = 1.8
+      frame = 0
+      dec_timer = 0
+
+      #Sprite stuff
+      local Real64 duration = 3.0/60.0
+      delta = 1.0/(duration * 60)
+
+    method center_circle.Circle
+      return Circle(position-Vector2(1, 0), 3)
+
+    method draw
+      Images.pacman[frame].draw(position)
+      if(Game.just_ate > 0) return
+      #Sprite stuff
+      if(progress >= 1) 
+        frame++
+        progress = 0
+      endIf
+
+      which(direction)
+        case 0: if(frame >= 4) frame = 0
+        case 1: if(frame >= 8) frame = 4
+        case 2: if(frame >= 12) frame = 8
+        case 3: if(frame >= 16) frame  = 12
+          others: frame = 0
+      endWhich
+
+    method update
+      #Get new current tile
+      curr_tile = Map.get_tile_at(position)
+
+      if(Game.just_ate > 0) return
+      if(not Game.locked) try_move(next_dir)
+
+      #Move
+      if(moving) position += velocity
+
+      #Check that curr tile isnt a side tile
+      forEach(tile in Map.sidetiles)
+        if((curr_tile == tile) and (curr_tile.center.contains(position))) teleport 
+      endForEach
+
+      #Eat pill
+      if((curr_tile.pill >= 0) and (curr_tile.center.contains(position))) curr_tile.eat_pill
+
+      #Stopping
+      if((not next_tile(direction).passable) and (curr_tile.center.contains(position))) stop
+
+      #Sprite stuff
+      if(moving) progress += delta
+
+      if(dec_timer > 0) dec_timer--
+
+    method teleport
+      #Brute force which tile we're in
+      if(position.x < 0)
+        position = Vector2(455, 280)
+        next_left
+      else
+        position = Vector2(-7, 280)
+        next_right
+      endIf
+
+    method next_tile(Int32 dir).Tile
+      which(dir)
+        case 0: return Map.get_tile_above(curr_tile)
+        case 1: return Map.get_tile_below(curr_tile)
+        case 2: return Map.get_tile_left_of(curr_tile)
+        case 3: return Map.get_tile_right_of(curr_tile)
+          others: return null
+      endWhich
+
+      #Directions:
+      #0 - Up
+      #1 - Down
+      #2 - Left
+      #3 - Right
+    method try_move(Int32 dir)
+      if(opposite(direction, dir)) 
+        move(dir)
+        return
+      endIf
+      #If you aren't moving
+      if(dir == -1) return
+      if(not moving)
+        if(next_tile(dir).passable)
+          move(dir)
+        endIf
+      endIf
+      if(moving)
+        if((next_tile(dir).passable) and (curr_tile.center.contains(position)))
+          move(dir)
+        endIf
+      endIf
+
+    method opposite(Int32 dir1, Int32 dir2).Logical
+      which(dir1)
+        case 0: if(dir2 == 1) return true
+        case 1: if(dir2 == 0) return true
+        case 2: if(dir2 == 3) return true
+        case 3: if(dir2 == 2) return true
+          others: return false
+      endWhich
+      return false
+
+    method move(Int32 dir)
+      if(not (opposite(direction, dir))) dec_timer = 5
+
+      which(dir)
+        case 0: 
+          velocity = Vector2(0, -speed)
+          frame = 0
+        case 1: 
+          velocity = Vector2(0, speed)
+          frame = 4
+        case 2: 
+          velocity = Vector2(-speed, 0)
+          frame = 8
+        case 3: 
+          velocity = Vector2(speed, 0)
+          frame = 12
+          others: 
+          velocity = Vector2(0, 0)
+          frame = 0
+      endWhich
+      direction = dir
+      moving = true
+
+    method stop
+      velocity = Vector2(0, 0)
+      frame = 0
+      moving = false
+
+    method next_blank
+      next_dir = -1
+
+    method next_up
+      if(start) return
+      next_dir = 0
+
+    method next_down
+      if(start) return
+      next_dir = 1
+
+    method next_left
+      start = false
+      next_dir = 2
+
+    method next_right
+      start = false
+      next_dir = 3
+
+endClass
+
+class Distance
+  PROPERTIES
+    dir	      : Int32
+    distance  : Int32
+
+  METHODS
+    method init(dir, distance)
+endClass
+
+
+class Tile
+  PROPERTIES
+    passable : Logical
+    decision : Logical
+    home     : Logical
+    position : Vector2
+    img	     : Image
+    pill     : Int32
+    slow     : Logical
+    default_pill : Int32
+
+  METHODS
+    method init(position, img)
+      passable = false
+      decision = false
+      pill = -1
+      default_pill = -1
+
+    method replace_pill
+      pill = default_pill
+
+    method box.Box
+      return Box(position-Vector2(8, 8), Vector2(16, 16))
+
+    method center.Box
+      return Box(position-Vector2(1.5, 1.5), Vector2(3, 3))
+
+    method set_slow
+      slow = true
+
+    method set_passable
+      passable = true
+
+    method set_decision
+      decision = true
+
+    method set_home
+      home = true
+
+    method set_no_pill
+      pill = -1
+
+    method set_pill
+      pill = 0
+      default_pill = 0
+
+    method set_power_pill
+      pill = 1
+      default_pill = 1
+
+    method eat_pill
+      if(pill == -1) return
+      if(pill == 0) 
+        Game.points += 10
+      elseIf(pill == 1) 
+        Game.points += 50
+        Game.scare_ghosts(Game.scared_time)
+      endIf
+      Game.eat_pill
+      set_no_pill
+      Game.pills_left--
+
+    method draw
+      img.draw(position)
+      if(Game.debug and home) 
+        local Circle c = Circle(position, 5)
+        c.draw(Color.green)
+      endIf
+      if(pill == 0)
+        local Box b = Box(position-Vector2(2, 2), Vector2(4, 4))
+        b.fill(Color.white)
+      endIf
+      if(pill == 1)
+        if(Game.ticks < 15) 
+          Images.power_pill.draw(position)
+        elseIf(Game.ticks < 30)  
+          Images.power_pill.draw(Vector2(-100, -100))
+        elseIf(Game.ticks < 45) 
+          Images.power_pill.draw(position)
+        endIf
+      endIf
+
+endClass
+
+singleton class Images
+  PROPERTIES
+    scale	: Int32
+    map		: Image[]
+    mapwhite    : Image
+    pacman	: Image[]
+    blinky	: Image[]
+    pinky	: Image[]
+    inky	: Image[]
+    clyde	: Image[]
+    scared	: Image[]
+    eyes	: Image[]
+    white	: Image[]
+    title : Image
+    cherry: Image
+    pacman_death: Image[]
+    power_pill	: Image
+
+  METHODS
+    method init
+      scale = 1
+
+    method set_up
+      map = Image[]("map.png")      
+      forEach(tile in map)
+        tile.handle = Handle.center
+      endForEach
+
+      mapwhite = Image("mapwhite.png")
+
+      power_pill = Image("power_pill.png")
+      power_pill.handle = Handle.center
+
+      pacman = Image[]("pacman.png")
+      forEach(img in pacman)
+        img.handle = Handle.center
+      endForEach
+
+      blinky = Image[]("blinky.png")
+      forEach(img in blinky)
+        img.handle = Handle.center
+      endForEach
+
+      pinky = Image[]("pinky.png")
+      forEach(img in pinky)
+        img.handle = Handle.center
+      endForEach
+
+      inky = Image[]("inky.png")
+      forEach(img in inky)
+        img.handle = Handle.center
+      endForEach
+
+      clyde = Image[]("clyde.png")
+      forEach(img in clyde)
+        img.handle = Handle.center
+      endForEach
+
+      scared = Image[]("ghost.png")
+      forEach(img in scared)
+        img.handle = Handle.center
+      endForEach
+
+      eyes = Image[]("eyes.png")
+      forEach(img in eyes)
+        img.handle = Handle.center
+      endForEach
+
+      white = Image[]("white.png")
+      forEach(img in white)
+        img.handle = Handle.center
+      endForEach
+
+      pacman_death = Image[]("pacmandeath.png")
+      forEach(img in pacman_death)
+        img.handle = Handle.center
+      endForEach
+
+      title = Image("logo.png")
+      title.handle = Handle.center
+
+      cherry = Image("cherry.png")
+      cherry.handle = Handle.center
+
+endClass
+
+singleton class Sounds
+  PROPERTIES
+    eat		  : Sound
+    eat_cherry	  : Sound
+    eat_ghost	  : Sound
+    ghost_return  : Sound
+    start	  : Sound
+    bg1		  : Sound
+    bg2		  : Sound
+    bg3		  : Sound
+    bg4		  : Sound
+    life		  : Sound
+    scared	  : Sound
+    dead	  : Sound
+
+  METHODS
+    method init
+
+    method set_up
+      eat = Sound("eat.wav")
+      eat.repeats(true)
+
+      eat_cherry = Sound("eat_fruit.mp3")
+
+      eat_ghost = Sound("eat_ghost.wav", 2)
+
+      ghost_return = Sound("ghost_return.wav")
+      ghost_return.repeats(true)
+
+      start = Sound("start.wav")
+
+      scared = Sound("scared.wav")
+
+      bg1 = Sound("bg1.wav")
+      bg1.repeats(true)
+      bg2 = Sound("bg2.wav")
+      bg2.repeats(true)
+      bg3 = Sound("bg3.wav")
+      bg3.repeats(true)
+      bg4 = Sound("bg4.wav")
+      bg4.repeats(true)
+
+      dead = Sound("dead.mp3")
+      life = Sound("life.mp3")
+
+endClass
