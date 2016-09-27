@@ -1,8 +1,10 @@
-![alt text](http://i.imgur.com/YnC39S6.png "Title screen")
-![alt text](http://i.imgur.com/Z20zThc.png "Looks near identical, but this image is the remake")
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=YOUTUBE_VIDEO_ID_HERE
+" target="_blank"><img src="http://img.youtube.com/vi/sInU6a5o14M/0.jpg" 
+alt="IMAGE Demonstration video" width="240" height="180" border="10" /></a>
+https://youtu.be/sInU6a5o14M
 # PacmanClone
 ##Description
-Accurate recreation of the iconic arcade game using an in-house 2D game engine, called Plasmacore, alongside an in-house programming language, Slag
+Accurate recreation of the iconic arcade game using an in-house 2D game engine, called Plasmacore, alongside an in-house programming language, Slag. The ghosts have been slowed down intentionally, as to allow for more play time.
 ##Dependencies
 gcc is required for Plasmacore compilation, but not required if just running the binary.
 ##Installation
