@@ -1,0 +1,83 @@
+description: Original install.
+id: plasmacore
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/plasmacore-3.2.1.zip
+date: 20110126
+name: Plasmacore 3.2.1
+
+description: Pre-compiled Windows platform utilizing DirectX and Audiere.
+id: platform-windows
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/plasmacore-3.2.1-windows.zip
+date: 20110126
+name: Plasmacore Windows Platform v3.2.1
+
+description: Mac platform project files. Must be compiled using Xcode. Necessary for adding custom native functionality into your Plasmacore projects.  Note: you must also download SDL 1.2.13 (http://www.libsdl.org/release/SDL-1.2.14.dmg) and copy the SDL.framework into the /Libraries folder.
+id: platform-mac-project
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/plasmacore-3.2.1-mac-project.zip
+date: 20110126
+name: Plasmacore Mac Platform v3.2.1
+dependencies: nativelib-gd nativelib-libplasmacore nativelib-mac_audio
+
+description: GD Library source code originally from libgd.org.
+id: nativelib-gd
+url: http://www.plasmaworks.com/files/plasmacore/archive/libraries/native/gd-2.0.36RC1.zip
+min_version: 3.1.1
+date: 20110111
+name: GD Graphics Library v2.0.36RC1
+dependencies: nativelib-libpng nativelib-libjpeg
+
+description: A condensed libpng v1.4.1, originally from libpng.org.
+id: nativelib-libpng
+url: http://www.plasmaworks.com/files/plasmacore/archive/libraries/native/lpng141.zip
+min_version: 3.0.7
+date: 20100310
+name: PNG Library version 1.4.1
+
+install_path: libraries/native
+description: Independent JPEG Group's JPEG Library
+id: nativelib-libjpeg
+url: http://www.ijg.org/files/jpegsr8a.zip
+install_action-default: copy upgrade/new_project/libraries/native/jpeg-8a/jconfig.vc upgrade/new_project/libraries/native/jpeg-8a/jconfig.h
+min_version: 3.0.7
+date: 20100310
+name: JPEG Library version 8a
+
+description: Native C++ libraries for compiling Plasmacore.
+id: nativelib-libplasmacore
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/libplasmacore-3.2.1.zip
+date: 20110126
+name: Plasmacore Native Library v3.2.1
+dependencies: nativelib-zlib nativelib-slag
+
+install_path: libraries/native
+description: Zlib 1.2.3.
+id: nativelib-zlib
+url: http://www.plasmaworks.com/files/plasmacore/archive/libraries/native/zlib-1.2.3.zip
+min_version: 3.0.7
+date: 20100314
+name: Zlib 1.2.3
+
+description: Slag VM and Runtime C++ library.
+id: nativelib-slag
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/libslag-3.2.1.zip
+date: 20110126
+name: Slag Native Library v3.2.1
+
+description: Simple Mac and iPhone audio library.
+id: nativelib-mac_audio
+url: http://www.plasmaworks.com/files/plasmacore/archive/libraries/native/mac_audio-1.0.zip
+min_version: 3.0.7
+date: 20100316
+name: Mac Audio v1.0.
+
+description: Precompiled Mac platform.
+id: platform-mac
+version: 3.2.1
+url: http://www.plasmaworks.com/files/plasmacore/archive/plasmacore-3.2.1-mac.zip
+date: 20110126
+name: Plasmacore Mac Platform v3.2.1
+

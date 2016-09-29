@@ -1,0 +1,1055 @@
+#==============================================================================
+# plasmacore.slag
+#
+# 3.2.1 (2011.01.26)
+#
+# -----------------------------------------------------------------------------
+#
+# Copyright 2008-2011 Plasmaworks LLC
+#
+#   http://plasmaworks.com/plasmacore
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# you may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at 
+#
+#   http://www.apache.org/licenses/LICENSE-2.0 
+#
+# Unless required by applicable law or agreed to in writing, 
+# software distributed under the License is distributed on an 
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific 
+# language governing permissions and limitations under the License.
+#
+#==============================================================================
+
+[include "font.slag"]
+[include "image.slag"]
+[include "sound.slag"]
+[include "input.slag"]
+[include "resource.slag"]
+
+#==============================================================================
+#  WrongPlasmacoreFile
+#==============================================================================
+class WrongPlasmacoreFile : Screen
+  METHODS
+    method init:
+      println( "plasmacore.slag should not be the main project file." )
+endClass
+
+#==============================================================================
+# Screen
+#==============================================================================
+class Screen : InputListener
+  CLASS_PROPERTIES
+    PUSH=0, REPLACE=1, POP=2 : Int32
+      # Internal use.
+
+    fade_none=0, fade_in=1, fade_out=2, fade_between=3 : Int32
+
+  PROPERTIES
+    previous_screen : Screen
+      # When a push()ed screen becomes active, its ''previous_screen'' is the
+      # one it will return to when it's pop()ed.
+
+    next_screen     : Screen
+      # Internal use.
+
+    pending_screen  : Screen
+      # Internal use.
+
+    pending_action  : Int32
+      # Internal use.
+    
+    pending_fade : Int32
+      # Internal use.
+
+    screen_active : Logical
+      # Internal use.
+
+    screen_fade_state : Int32
+      # Internal use.
+
+    screen_fade_time=0.5 : Real64
+      # In seconds.
+
+    screen_fade_color(0,0,0) : Color
+
+    screen_fade_progress=0.0 : Real64
+      # Internal use.
+
+  METHODS
+    method init:
+
+    method update:
+
+    method draw:
+
+    method on_activate:
+
+    method on_resume:
+
+    method resolve_pending_action.Logical:
+      which (screen_fade_state)
+        case fade_in, fade_out:
+          if (screen_fade_progress == 1.0)
+            screen_fade_state = fade_none
+          else
+            screen_fade_progress += 1.0 / (screen_fade_time * 60.0)
+            if (screen_fade_progress >= 1.0) screen_fade_progress = 1.0
+            return false
+          endIf
+      endWhich
+
+      if (pending_screen is null) return false
+
+      which (pending_fade)
+        case fade_in:
+          pending_screen.screen_fade_state = fade_in
+          pending_fade = fade_none
+          pending_screen.screen_fade_progress = 0.0
+        case fade_out:
+          screen_fade_state = fade_out
+          pending_fade = fade_none
+          screen_fade_progress = 0.0
+          return true
+        case fade_between:
+          pending_screen.screen_fade_state = fade_in
+          screen_fade_state = fade_out
+          pending_fade = fade_none
+          screen_fade_progress = 0.0
+          pending_screen.screen_fade_progress = 0.0
+          return true
+      endWhich
+
+      if (Application.&screen is this) Application.screen = pending_screen
+      else throw Error( "Action on inactive screen." )
+
+      which (pending_action)
+        case PUSH:
+          if (screen_active) screen_active = void
+          pending_screen.previous_screen = this
+        case REPLACE:
+          if (screen_active) screen_active = false
+          pending_screen.previous_screen = this.previous_screen
+        case POP:
+          if (screen_active) screen_active = false
+      endWhich
+      pending_screen = null
+      return true
+
+    method replace_with( pending_screen, pending_fade=fade_none ).Screen:
+      pending_action = REPLACE
+      return this
+
+    method push( pending_screen, pending_fade=fade_none ).Screen:
+      pending_action = PUSH
+      return this
+
+    method pop( pending_fade=fade_none ).Screen:
+      if (previous_screen?)
+        pending_screen = previous_screen
+        pending_action = POP
+      else
+        if (Application.&screen is this) Application.screen = null
+        screen_active = false
+      endIf
+      return previous_screen
+
+    method next( pending_fade=fade_none ).Screen:
+      # Deprecated
+      return advance( pending_fade )
+
+    method advance( pending_fade=fade_none ).Screen:
+      if (next_screen?)
+        pending_screen = next_screen
+        pending_action = REPLACE;
+        return next_screen
+      else
+        return pop(pending_fade)
+      endIf
+
+    method chain( Screen other ).Screen:
+      local var cur = this
+      while (cur.next_screen?) cur .= next_screen
+      cur.next_screen = other
+      return this
+
+    method on_images_lost:
+      # Override this method to reload images local to this object.
+      # Any ImageGroup objects will automatically reload.
+
+    method dispatch_images_lost:
+      on_images_lost
+      if (previous_screen?) previous_screen.dispatch_images_lost
+      if (next_screen?) next_screen.dispatch_images_lost
+endClass
+
+class ScreenBorder : Screen
+  # See Display.screen_border for more details.
+  PROPERTIES
+    color(0,0,0) : Color
+
+  METHODS
+    method draw:
+      if (Display.size == Display.true_size) return
+
+      local Int32 excess_x = (Display.true_size.x - Display.scaled_size.x)
+      local Int32 excess_y = (Display.true_size.y - Display.scaled_size.y)
+
+
+      local Int32 left, right
+      local Int32 top, bottom
+
+      if (excess_x?)
+        left = excess_x / 2
+        right = excess_x - left;
+      endIf
+      if (excess_y?)
+        top = excess_y / 2
+        bottom = excess_y - top;
+      endIf
+
+      local var old_size = Display.size
+      Display.scale_to_fit(Display.true_size)
+
+      draw_borders( left, top, right, bottom )
+
+      Display.scale_to_fit(old_size)
+
+    method draw_borders( Int32 left, Int32 top, Int32 right, Int32 bottom ):
+        # left
+        Box(0,0,left,Display.true_size.y).fill(Color.black)
+
+        # right
+        Box(Display.true_size.x-right,0,right,Display.true_size.y).fill(Color.black)
+
+        # top
+        Box(0,0,Display.true_size.x,top)
+
+        # bottom
+        Box(0,Display.true_size.y-bottom,Display.true_size.x,bottom)
+endClass
+
+
+#==============================================================================
+# Application
+#==============================================================================
+singleton class Application : InputListener
+  PROPERTIES
+    screen  : Screen
+
+    exit_request_handler() : ExitRequestHandler
+      # Example of overriding default behavior to save the game before exiting:
+      #
+      #   Application.exit_request_handler = ExitRequestHandler() with
+      #     method on_exit_request: 
+      #       save_game
+      #       prior.on_exit_request
+      #   endWith
+
+  METHODS
+    method title( String window_title ): native
+      # Application title property-set for this application.
+      #
+      # Example:
+      #   Application.title = "MadStone"
+
+    method prep( Screen s ).Screen:
+      if (s is null) return null
+
+      which (s.screen_active)
+        case false:
+          s.screen_active = true
+          s.on_activate
+
+        case void:
+          s.screen_active = true
+          s.on_resume
+      endWhich
+
+      return s
+
+    method screen.Screen:
+      while (&screen? and &screen.resolve_pending_action) noAction
+      return prep(&screen)
+
+    method update:
+      update( screen )
+      Display.screen_border.update
+
+    method update( Screen s ):
+      if (s? and s.screen_fade_state == 0) s.update
+
+    method draw:
+      Display.clipping_region = Display.region
+      draw( screen )
+      Display.screen_border.draw
+
+    method draw( Screen s ):
+      if (s is null) return
+      s.draw
+      if (s.screen_fade_state?)
+        if (s.screen_fade_state == s.fade_in)
+          Display.region.fill( s.screen_fade_color.with_alpha(255*(1.0-s.screen_fade_progress)) )
+        else
+          Display.region.fill( s.screen_fade_color.with_alpha(255*s.screen_fade_progress) )
+        endIf
+      endIf
+
+    method on( MouseEvent e ):
+      local var s = screen
+      if (s? and s.pending_screen is null) s.on(e)
+
+    method on( KeyEvent e ):
+      local var s = screen
+      if (s? and s.pending_screen is null) s.on(e)
+
+    method on( AccelerationEvent e ):
+      local var s = screen
+      if (s? and s.pending_screen is null) s.on(e)
+
+    method on( SystemEvent e ):
+      local var s = screen
+      if (s?) s.on(e)
+
+    method on_images_lost:
+      if (screen?)  screen.dispatch_images_lost
+
+    method log( String mesg ): native
+      # Prints the given message to stdout and "save/log.txt".
+
+    requisite method on_exit_request:
+      try
+        exit_request_handler.on_exit_request()
+      catch (Exception err)
+        println( err.to_String )
+      endTry
+
+endClass
+
+class ExitRequestHandler
+  METHODS
+    method init:
+
+    method on_exit_request:
+      if (System.os != "iphone" and System.os != "android") System.exit
+endClass
+
+
+#=====================================================================
+# Display
+#=====================================================================
+requisite singleton class Display
+  PROPERTIES
+    size            : readOnly Vector2
+      # The logical size of the display in pixels.
+
+    true_size       : readOnly Vector2
+      # The original size of the display in actual pixels - only differs from
+      # ''size'' if Display.scale_to_fit() has been called.
+
+    scaled_size     : readOnly Vector2
+      # Display.size in actual pixels.  Only differs from ''size'' if
+      # Display.scale_to_fit() has been called.
+
+    center          : readOnly Vector2
+      # Convenience property equal to size/2.
+
+    clipping_region : Box
+      # The current viewport - parts of graphics that lie outside
+      # this region are clipped and not drawn.
+
+    background_color(0,0,0) : Color
+      # The color the screen is automatically cleared to before each
+      # call to draw().  If you set 'bg_color' to a color with zero
+      # alpha the native layer will not clear the back buffer.
+
+    screen_border : ScreenBorder
+      # Special Screen that draws borders on the sides of resized
+      # displays.  Set to a ScreenBorder screen by default; you
+      # can set it to a custom border drawing screen.
+
+    trace_messages()   : String[]
+      # Internal use - the list of active trace messages.
+
+    last_trace_activity_ms : Int64
+      # Internal use - the time of the last new trace message.
+
+    have_draw_target      : Logical
+      # Internal use.
+
+    original_display_size : Vector2
+      # Internal use.
+
+  METHODS
+    method set_up( size ):
+      true_size = size
+      scaled_size = size
+      center = size / 2
+      clipping_region = Box(size)
+      if (screen_border is null) screen_border = ScreenBorder()
+
+    method scale_to_fit( Int32 width, Int32 height ):
+      # Sets up an internal transform so that you treat the display
+      # size as the given size and Plasmacore scales and centers
+      # the content within the same aspect ratio.
+      #
+      # After this call, Display.size, Display.center, etc., will
+      # reflect the new width and height parameters and Display.true_size
+      # will have the original size.
+      #
+      # Screen.draw_borders() is called to draw black bars on the sides
+      # of a resized, centered display.  Override that method to
+      # perform custom drawing.
+      scaled_size = native_scale_to_fit( width, height )
+      size = Vector2(width,height)
+      center = size / 2
+      clipping_region = Box(size)
+
+    method scale_to_fit( Vector2 new_size ):
+      # Sets up an internal transform so that you treat the display
+      # size as the given size and Plasmacore scales and centers
+      # the content within the same aspect ratio.
+      #
+      # After this call, Display.size, Display.center, etc., will
+      # reflect the new size and Display.true_size will have the 
+      # original size.
+      #
+      # Screen.draw_borders() is called to draw black bars on the sides
+      # of a resized, centered display.  Override that method to
+      # perform custom drawing.
+      scale_to_fit( new_size.x, new_size.y )
+
+    method native_scale_to_fit( Int32 width, Int32 height ).Vector2: native
+      # Internal use.
+
+    method bounding_box.Box:
+      return Box(size)
+
+    method fullscreen( Logical setting ): native
+      # Sets the application to fullscreen if setting is "true" or 
+      # windowed mode if it's "false".
+      #
+      # Example:
+      #   Application.fullscreen = true
+
+    method fullscreen.Logical: native
+      # Returns "true" if the application is running in fullscreen 
+      # mode or "false" if it's running in windowed mode.
+      #
+      # Example:
+      #   if (Application.fullscreen) ...
+
+    method on_toggle_fullscreen:
+      # Called by the input object when an ALT+ENTER key combination
+      # is detected.  The default behavior is to toggle the fullscreen
+      # property setting.
+      fullscreen = not fullscreen
+
+    method region.Box:
+      # Returns the Box that frames the entire display.
+      return Box(size)
+
+    method clipping_region( Box new_clip ):
+      # This property-set adjust the clipping region of the screen.
+      # Anything part of any graphics that lie outside the clipping 
+      # region won't be drawn.  The current transform is applied
+      # to the clipping coordinates - a non-orthagonal transform
+      # will not be correctly applied.
+      &clipping_region = new_clip
+      native_set_clipping_region( new_clip )
+
+    method clear_clipping_region:
+      # Restores the clipping region to be the entire display.
+      clipping_region = Box(size)
+
+    private method native_set_clipping_region( Box box ): native
+      # Internal use.
+
+    method set_draw_target( OffscreenBuffer buffer, Logical blend_alpha=true ):
+      # Selects the given offscreen buffer as the target of various drawing
+      # commands - send "null" to change back to the main display. Send
+      # "true" for 'blend_alpha' to perform normal alpha blending or "false"
+      # to preserve the alpha of the original colors as they're drawn.
+      #
+      # Selects the given OffscreenBuffer to be the target of image-drawing calls.
+      # Pass "null" to use the main display as the draw target.  The draw target
+      # is reset to the main display before each draw event.
+      #
+      # Example:
+      #   status_bar(320,32) : OffscreenBuffer
+      #   ...
+      #   Application.set_draw_target(status_bar)
+      #   tool_icon.draw( 0, 0 )
+      #   ...
+      #   Application.set_draw_target(null)  # select main display
+      #   status_bar.draw( 0, 0 )
+      if (have_draw_target)
+        if (buffer is null)
+          have_draw_target = false
+          Display.scale_to_fit(original_display_size)
+        endIf
+      else
+        if (buffer?)
+          original_display_size = Display.size
+          Display.scale_to_fit(Display.true_size)
+          have_draw_target = true
+        endIf
+      endIf
+
+      native_set_draw_target( buffer, blend_alpha )
+
+    private method native_set_draw_target( OffscreenBuffer buffer, Logical blend_alpha ): native
+
+    method clear( Color color=Color.black ):
+      Display.region.fill( color )
+
+    method screen_shot( Bitmap bmp=null ).Bitmap: native
+      # Retrieves the display's image data as a software Bitmap.
+      #
+      # If you pass in a Bitmap, the bitmap's existing pixel data array will 
+      # either be reused if it is already the same size or else it will be 
+      # reallocated - in either case the original bitmap reference will be 
+      # returned.
+      #
+      # If you don't pass in a Bitmap, a Bitmap of the appropriate size
+      # will be created and returned for you.
+
+    method trace( String mesg ):
+      # Prints the given trace message to the screen as well as 
+      # logging it to "log.txt".
+      SystemFont  # Get the SystemFont loading if it's not already loaded
+      forEach (line in LineReader(mesg))
+        log( line )
+        trace_messages.add( line )
+      endForEach
+
+      while (trace_messages.count > 15) trace_messages.remove_first
+      last_trace_activity_ms = time_ms
+
+    method flush: native
+      # Flushes an queued drawing commands.  You do not need to call this unless
+      # you are about to call custom native layer functionality to perform custom
+      # rendering
+
+    method last_draw_time_ms.Int32: native
+      # Returns the number of milliseconds that the last draw() cycle took
+      # to execute.  This includes not only the time spent in draw(), but
+      # also the time the system takes to present the final rendered frame
+      # (to finish rendering plus perform screen swap or similar).
+
+endClass
+
+overlaying augment Global
+  METHODS
+[if defined(PLASMACORE)]
+    method set_up_stdio:
+      stdout = TraceWriter()
+      insertUnderlying
+[endIf]
+
+    method trace( String mesg ):
+      # Prints the given trace message to the screen as well as 
+      # logging it to "log.txt".
+      Display.trace( mesg )
+
+    method log( String mesg ):
+      # Prints the given message to stdout and "save/log.txt".
+      Application.log( mesg )
+endAugment
+
+
+#=====================================================================
+# System
+#=====================================================================
+overlaying augment System
+  METHODS
+    method max_texture_size.Vector2: native
+
+    method force_garbage_collection( Int32 times ):
+      insertUnderlying
+
+    method device_id.String: native
+      # Returns a unique device id for iPhone and iPod Touch.
+
+    method open_url( String url ): native
+
+    method country_name.String: native
+
+    method on_garbage_collection:
+      Input.dispatch( SystemEvent(garbage_collected) )
+endAugment
+
+
+#=====================================================================
+#  TraceWriter - used to redirect stdout messages to be a trace
+#=====================================================================
+requisite class TraceWriter : TextWriter
+  PROPERTIES
+    buffer() : StringBuilder
+
+  METHODS
+    method init:
+
+    method write( Char ch ):
+      if (ch == 10)
+        local var st = buffer.to_String
+        trace( st )
+        buffer.clear
+      else
+        buffer.print( ch )
+      endIf
+endClass
+
+
+#=====================================================================
+# EventManager
+#=====================================================================
+requisite singleton class EventManager
+  PROPERTIES
+    # Appropriate parameters are set by the native layer before
+    # calling on_native_event().  THESE PROPERTIES MUST COME FIRST - 
+    # they are mirrored as a native-side struct.
+    param_screen     : Screen
+    param_x          : Real64
+    param_y          : Real64
+    param_is_unicode : Logical
+    param_code       : Int32
+    param_id         : Int32
+    param_index      : Int32
+
+    system_services() : SystemService[]
+    active_system_services() : SystemService[]
+
+    event_handlers(128) : ReferenceTable<<String,EventHandler>>
+
+    min_updates_per_draw=1  : Int32
+    max_updates_per_draw=6  : Int32
+    updates_since_last_draw : Int32
+    allow_standard_events = true : Logical
+
+    event_launch = "launch" : String
+    event_update = "update" : String
+    event_draw   = "draw"   : String
+    event_key_press   = "key_press" : String
+    event_key_release = "key_release" : String
+    event_mouse_move_relative  = "mouse_move_relative"  : String
+    event_mouse_move_absolute  = "mouse_move_absolute"  : String
+    event_mouse_button_press   = "mouse_button_press"   : String
+    event_mouse_button_release = "mouse_button_release" : String
+    event_mouse_wheel          = "mouse_wheel" : String
+    event_garbage_collected    = "garbage_collected" : String
+    event_resources_loaded     = "resources_loaded" : String
+    event_textures_lost        = "textures_lost" : String
+
+  METHODS
+    method init:
+      which (System.hardware_version)
+        case "iPhone1,1", "iPhone1,2", "iPod1,1", "iPod2,1":
+          min_updates_per_draw = 2
+        others:
+          min_updates_per_draw = 1
+      endWhich
+      install_default_event_handlers
+
+    method install_default_event_handlers:
+      event_handlers["launch"] = EventHandler() with
+        method on( String event_type ):
+          try
+            Application.listen_to(Input)
+            local var param_screen = EventManager.param_screen
+            Display.set_up( Vector2(EventManager.param_x,EventManager.param_y) )
+            Application.screen = param_screen
+
+            param_screen.init_object
+            param_screen.init
+
+          catch (Exception err)
+            trace( err.to_String )
+          endTry
+      endWith
+
+      event_handlers["update"] = EventHandler() with
+        method on( String event_type ):
+          if (not EventManager.allow_standard_events) return
+
+          if (EventManager.updates_since_last_draw >= EventManager.max_updates_per_draw) return
+          EventManager.updates_since_last_draw++
+
+          try
+            Input.update
+            Application.update
+            TaskManager.update
+          catch (Exception err)
+            trace( err.to_String )
+          endTry
+      endWith
+
+      event_handlers["draw"] = EventHandler() with
+        method on( String event_type ):
+          if (not EventManager.allow_standard_events) return
+
+          EventManager.updates_since_last_draw = 0
+          try
+            Application.draw
+          catch (Exception err)
+            trace( err.to_String )
+          endTry
+
+          # draw trace messages
+          try
+            if (Display.trace_messages.count > 0)
+              Display.clear_clipping_region
+
+              local Int32 y = 0
+              SystemFont.handle = Handle.top_left
+              SystemFont.color = Color.white
+              SystemFont.scale = 1.0
+              forEach (mesg in Display.trace_messages)
+                SystemFont.draw( mesg, Vector2(0,y) )
+                y += SystemFont.height
+              endForEach
+
+              # 6 seconds until first message disappears
+              # and afterwards another disappears every second
+              if (time_ms - Display.last_trace_activity_ms > 6000)
+                Display.trace_messages.remove_first
+                Display.last_trace_activity_ms = time_ms - 5000
+              endIf
+            endIf
+          catch (Error err)
+            log( err.to_String )
+          endTry
+      endWith
+
+      event_handlers["key_press"] = EventHandler() with
+        method on( String event_type ):
+          local Int32 code
+          local Char ch
+          if (EventManager.param_is_unicode)
+            ch = EventManager.param_code
+            code = Key.unicode_to_keycode[ch % Key.unicode_to_keycode.count]
+          else
+            code = EventManager.param_code
+            ch = Input.keycode_to_Char(code)
+          endIf
+          Input.handle_key_press( ch, code )
+      endWith
+
+      event_handlers["key_release"] = EventHandler() with
+        method on( String event_type ):
+          local Int32 code
+          local Char ch
+          if (EventManager.param_is_unicode)
+            ch = EventManager.param_code
+            code = Key.unicode_to_keycode[ch % Key.unicode_to_keycode.count]
+          else
+            code = EventManager.param_code
+            ch = Input.keycode_to_Char( code )
+          endIf
+          Input.handle_key_release( ch, code )
+      endWith
+
+      event_handlers["mouse_move_relative"] = EventHandler() with
+        method on( String event_type ):
+          local var id = EventManager.param_id
+          Input.dispatch( MouseEvent(relative_movement,id,Vector2(EventManager.param_x,EventManager.param_y),0) )
+      endWith
+
+      event_handlers["mouse_move_absolute"] = EventHandler() with
+        method on( String event_type ):
+          local var id = EventManager.param_id
+          Input.mouse_positions[id] = Vector2(EventManager.param_x,EventManager.param_y)
+          Input.dispatch( MouseEvent(movement,id,Vector2(EventManager.param_x,EventManager.param_y),0) )
+      endWith
+
+      event_handlers["mouse_button_press"] = EventHandler() with
+        method on( String event_type ):
+          local var id = EventManager.param_id
+          Input.mouse_positions[id] = Vector2(EventManager.param_x,EventManager.param_y)
+          Input.mouse_button_state[EventManager.param_index] = true
+          Input.dispatch( MouseEvent(button_press,id,Vector2(EventManager.param_x,EventManager.param_y),
+              EventManager.param_index) )
+      endWith
+
+      event_handlers["mouse_button_release"] = EventHandler() with
+        method on( String event_type ):
+          local var id = EventManager.param_id
+          Input.mouse_positions[id] = Vector2(EventManager.param_x,EventManager.param_y)
+          Input.mouse_button_state[EventManager.param_index] = false
+          Input.dispatch( MouseEvent(button_release,id,Vector2(EventManager.param_x,EventManager.param_y),
+              EventManager.param_index) )
+      endWith
+
+      event_handlers["mouse_wheel"] = EventHandler() with
+        method on( String event_type ):
+          local var id = EventManager.param_id
+          Input.mouse_positions[id] = Vector2(EventManager.param_x,EventManager.param_y)
+          if (EventManager.param_index < 0)
+            Input.dispatch( MouseEvent(wheel_up,id,Vector2(EventManager.param_x,EventManager.param_y),0) )
+          else
+            Input.dispatch( MouseEvent(wheel_down,id,Vector2(EventManager.param_x,EventManager.param_y),0) )
+          endIf
+      endWith
+
+      event_handlers["garbage_collected"] = EventHandler() with
+        method on( String event_type ):
+          Input.dispatch( SystemEvent(garbage_collected) )
+      endWith
+
+      event_handlers["resources_loaded"] = EventHandler() with
+        method on( String event_type ):
+          Input.dispatch( SystemEvent(resources_loaded) )
+      endWith
+
+      event_handlers["textures_lost"] = EventHandler() with
+        method on( String event_type ):
+          log( "TEXTURES LOST" )
+          TextureManager.on_textures_lost
+
+          # Reload the system font if it was already loaded
+          if (SystemFontManager.singleton_instance?) SystemFont = SystemFont()
+
+          Display.screen_border.on_images_lost
+          Application.on_images_lost
+      endWith
+
+
+    requisite method find_event_key( String event_type ).String:
+      # Event type strings are usually compared with 'is', so this method allows you
+      # to find the actual event object that is '==' to the given type.
+      return event_handlers.find_key(event_type)
+
+    method throttle_update_cycle( Int32 max_updates_this_cycle ):
+      # Make sure there are no more than 'max_updates_this_cycle' updates
+      # before the nxt draw.
+      if (max_updates_this_cycle <= updates_since_last_draw)
+        updates_since_last_draw = max_updates_per_draw
+      else
+        local var remaining = max_updates_this_cycle - updates_since_last_draw
+        updates_since_last_draw = max_updates_per_draw - remaining
+      endIf
+
+    requisite method update_system_services.Logical:
+      # Internal use - called by native layer.
+      # Returns "true" if any services are exclusive (suspend normal events
+      # and force other exclusive services to automatically queue up).
+      local var found_exclusive = false
+      forEach (service in active_system_services.copy_from(system_services))
+        if (found_exclusive)
+          if (not service.exclusive and not service.update) system_services.remove(service)
+        else
+          if (not service.update) system_services.remove(service)
+          else found_exclusive |= service.exclusive
+        endIf
+      endForEach
+      allow_standard_events = not found_exclusive
+      return found_exclusive
+
+    requisite method on_native_event( String event_type ):
+      local var handler = event_handlers[event_type]
+      if (handler?) handler.on(event_type)
+      else log( "Unhandled event: " + event_type )
+endClass
+
+class ReferenceTable<<$KeyType,$ValueType>>
+  # Behaves like a HashTable but does an 'is' instead of '==' test and uses closed hashing.
+  # Designed for speed.  Keeps the table <= 50% full.
+  PROPERTIES
+    entries    : Array<<Mapping<<$KeyType,$ValueType>>>>
+    open_spots : Int32
+
+  METHODS
+    method init( Int32 capacity ):
+      entries = Array<<Mapping<<$KeyType,$ValueType>>>>(capacity)
+      open_spots = capacity / 2
+
+    method set( $KeyType key, $ValueType value ):
+      local var limit = entries.count
+      local var highest = limit - 1
+      local var i = key.hash_code & highest
+
+      loop
+        local var entry = entries[i]
+        if (entry?)
+          if (entry.key is key)
+            entry.value = value
+            return
+          endIf
+        else
+          entries[i] = Mapping<<$KeyType,$ValueType>>( key, value )
+          --open_spots
+          if (open_spots == 0)
+            local ReferenceTable<<$KeyType,$ValueType>> new_table( limit*2 )
+            forEach (index in 0..highest)
+              entry = entries[index]
+              if (entry?) new_table[entry.key] = entry.value
+            endForEach
+            entries = new_table.entries
+            open_spots = new_table.open_spots
+          endIf
+          return
+        endIf
+        i = (i + 1) & highest
+      endLoop
+
+    method get( $KeyType key ).$ValueType:
+      local var highest = entries.count - 1
+      local var i = key.hash_code & highest
+
+      loop
+        local var entry = entries[i]
+        if (entry?)
+          if (entry.key is key)
+            return entry.value
+          endIf
+        else
+          return null
+        endIf
+        i = (i + 1) & highest
+      endLoop
+
+    method contains( $KeyType key ).Logical:
+      return get(key)?
+
+    method find_key( $KeyType key ).$KeyType:
+      # Use an '==' to find the actual key object suitable for an 'is' comparison.
+      local var highest = entries.count - 1
+      local var i = key.hash_code & highest
+
+      loop
+        local var entry = entries[i]
+        if (entry?)
+          if (entry.key == key)
+            return entry.key
+          endIf
+        else
+          return null
+        endIf
+        i = (i + 1) & highest
+      endLoop
+
+    method remove( $KeyType key ).$ValueType:
+      local var highest = entries.count - 1
+      local var i = key.hash_code & highest
+
+      loop
+        local var entry = entries[i]
+        if (entry?)
+          if (entry.key is key)
+            entries[i] = null
+            ++open_spots
+            return entry.value
+          endIf
+        else
+          return null
+        endIf
+        i = (i + 1) & highest
+      endLoop
+
+endClass
+
+
+class EventHandler
+  METHODS
+    method init:
+
+    method on( String event_type ): abstract
+endClass
+
+
+class SystemService
+  PROPERTIES
+    exclusive : Logical
+
+  METHODS
+    method init_object:
+      EventManager.system_services.add(this)
+
+    method init( exclusive ):
+
+    method update.Logical: abstract
+      # Override to update your system service.
+      # Return 'true' to stay active; false to terminate.
+endClass
+
+requisite class PlaceholderSystemService : SystemService
+  # Placeholder class to provide at least one concrete implementation
+  # for SystemService.update for cross-compiled code.
+  requisite method update.Logical: return false
+endClass
+
+
+singleton class SystemMonitor : Screen
+  # The SystemMonitor is a screen that optionally displays information
+  # about the texture sheets used by the Image system and the memory
+  # usage in general.
+
+  PROPERTIES
+    texture_sheets_visible : Logical
+      # Set this debugging option to true to have the program 
+      # display the texture sheets it uses.  The sheets
+      # are 1024x1024 on the IPhone and 512x512 on other systems.
+      # They are scaled down to fit the display screen.
+
+    memory_usage_visible : Logical
+      # Set this debugging option to show approximately how much memory your
+      # system is using.  Does not count executable size.  Note that on
+      # a desktop system there is a 20 MB fast heap but on a mobile
+      # device it's 1 MB.
+
+  METHODS
+    method init:
+      show
+
+    method show_all:
+      # Shows texture sheets and memory usage.
+      texture_sheets_visible = true
+      memory_usage_visible = true
+
+    method hide_all:
+      # Hides texture sheets and memory usage.
+      texture_sheets_visible = false
+      memory_usage_visible = false
+
+    method log_drawing( Logical setting ): native
+      # Writes drawing info to the log file on Mac and Windows.
+
+    method update:
+      if (texture_sheets_visible or memory_usage_visible) bring_to_front
+
+    method draw:
+      if (texture_sheets_visible or memory_usage_visible)
+        SystemFont.handle = Handle.top_left
+        SystemFont.color = Color.white
+        SystemFont.scale = 1.0
+        local Vector2 offset( 0, SystemFont.height )
+
+        if (texture_sheets_visible)
+          if (TextureSheetManager.sheets.count?)
+            local var index = (time_ms / 2000) % TextureSheetManager.sheets.count
+            local var sheet = TextureSheetManager.sheets[index]
+            local var img = Image(sheet.texture,Corners(0,0,1,1))
+            local var s = (Display.size / img.size).min
+            if (s > 1.0) s = 1.0
+            img.scale = s
+            img.bounding_box.fill(Color.blue)
+            img.draw(0,0)
+            SystemFont.draw( "TEXTURE SHEET $/$" (index+1,TextureSheetManager.sheets.count), offset*0 )
+          else
+            SystemFont.draw( "NO TEXTURE SHEETS", offset*0 )
+          endIf
+        endIf
+
+        if (memory_usage_visible)
+          System.force_garbage_collection
+          local var usage = System.memory_usage
+          SystemFont.draw( "MEMORY USAGE", offset*2 )
+          SystemFont.draw( usage.to_String, offset*3 )
+        endIf
+      endIf
+
+endClass
+

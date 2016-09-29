@@ -1,0 +1,25 @@
+[if defined(WP7)]
+singleton class WindowsPhone7
+  PROPERTIES
+    is_trial=void : Logical
+
+  METHODS
+    method is_trial.Logical:
+      if (&is_trial == void) &is_trial = native_is_trial
+      return &is_trial
+
+    method native_is_trial.Logical: native
+endClass
+
+[else]
+singleton class WindowsPhone7
+  PROPERTIES
+    is_trial : Logical
+      # Set to "true" or "false" as desired.
+
+  METHODS
+    method is_trial.Logical:
+      return &is_trial
+endClass
+[endIf]
+

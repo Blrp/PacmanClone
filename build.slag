@@ -1,0 +1,7 @@
+[include "build_core.slag"]
+
+class CustomBuild : BuildCore
+  METHODS
+    method build( String cmd ):
+      prior.build(cmd)
+endClass

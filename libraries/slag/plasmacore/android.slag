@@ -1,0 +1,181 @@
+#==============================================================================
+# android.slag
+#
+# 3.2.1 (2011.01.26)
+#
+# Android-specific classes.
+#
+# -----------------------------------------------------------------------------
+#
+# Copyright 2008-2011 Plasmaworks LLC
+#
+#   http://plasmaworks.com/plasmacore
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# you may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at 
+#
+#   http://www.apache.org/licenses/LICENSE-2.0 
+#
+# Unless required by applicable law or agreed to in writing, 
+# software distributed under the License is distributed on an 
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific 
+# language governing permissions and limitations under the License.
+#
+#==============================================================================
+
+singleton class Android
+  # Contains Android-specific properties and methods.
+  #
+  # See also: [[SlagDoc:AndroidScreen|AndroidScreen]].
+
+  PROPERTIES
+    fast_hardware=void : Logical
+    # If you extend your starting screen from [[SlagDoc:AndroidSetup|AndroidSetup], it will
+    # set the proper value of ''fast_hardware'' on startup.
+
+  METHODS
+    method native_config( String project_id, String key_filename, AndroidSetup screen ): native
+      # Internal use.
+endClass
+
+
+class AndroidSetup : Screen
+  # Have an extended AndroidSetup screen be your main class in an Android app.
+  # It will perform a drawing speed test and download game resources to the SD card
+  # if needed.
+  #
+  # Have images that show the download progress (background, progress bar) be
+  # stored in "platform/android/assets", modify the example below to suit your
+  # app, and place it as the first class in your app:
+  #
+  #
+  #   [if defined(ANDROID)]
+  #   [include "android.slag"]
+  #   
+  #   class AndroidLaunch : AndroidSetup
+  #     PROPERTIES
+  #       bg : Image
+  #   
+  #     METHODS
+  #       method init:
+  #         prior.init( "robot_football", "key.txt" )
+  #           # The first parameter is required and is the name of your project.
+  #           # This project's resources will be downloaded to
+  #           # "/sdcard/plasmacore/robot_football".
+  #           #
+  #           # The second parameter is optional.  If you leave it off then
+  #           # you should manually copy your images, data, and sounds folders
+  #           # into "/sdcard/plasmacore/robot_football" - this is development
+  #           # mode.
+  #           #
+  #           # If you include a second parameter then you should have a Plasmacore
+  #           # keyfile of the specified name stored in "platforms/android/assets/" 
+  #           # (see [[Plasmacore:Android Projects|Android Projects]] on the Plasmacore Wiki
+  #           # for more information on key files).
+  #   
+  #       method load_images:
+  #         bg = Image(Bitmap("download_bg.png"))
+  #           # Load our bg image - since it should be stored in the assets folder
+  #           # it won't be on the image manifest - hence going through Bitmap.
+  #   
+  #       method draw_progress:
+  #         bg.draw        
+  #         println( progress )   # progress is (0..1.0) - draw actual progress bar
+  #   
+  #       method update:
+  #         prior.update
+  #         if (progress == 1.0) replace_with( MainGameScreen() )
+  #   
+  #   endClass
+  #   [endIf]
+  #
+  # See also: [[SlagDoc:Android|Android]]
+  CLASS_PROPERTIES
+    speed_test        = 1 : Int32
+    resloader_request = 2 : Int32
+    resloader_wait    = 3 : Int32
+    downloading_res   = 4 : Int32
+
+  PROPERTIES
+    state            : Int32
+    project_id       : String
+    key_filename     : String
+    draw_times()     : Int32[]
+    img_test         : Image
+    progress         : Real64
+    downloading      : Logical
+    allow_speed_test : Logical
+
+  METHODS
+    method init( project_id, key_filename=null ):
+      state = speed_test
+      img_test = Image( Bitmap(16,16,Color.black) )
+
+    method update:
+      # Override this method to call prior.update and then replace_with(another_screen)
+      # when progess == 1.0.
+      which (state)
+        case resloader_request:
+          Android.native_config( project_id, key_filename, this )
+          state = resloader_wait
+
+        case resloader_wait:
+          if (downloading)
+            load_images
+            state = downloading_res
+          endIf
+
+        case downloading_res:
+          if (progress == 1.0)
+            ImageManager.init
+          endIf
+      endWhich
+
+    method load_images:
+      # Override this method to load any graphics you want to use to draw the progress
+      # of the download.
+
+    method draw_progress: abstract
+      # Override this method to draw the value ''progress'' (0 to 1.0).
+
+    method draw:
+      # Do not override this method as it runs an essential speed test.
+      # Override draw_progress instead.
+      if (state == speed_test and not allow_speed_test) state = resloader_request
+
+      which (state)
+        case speed_test:
+          draw_times.add( Display.last_draw_time_ms )
+          if (draw_times.count == 12)
+            draw_times.discard_first(2)
+            local Int32 draw_time_ms = Int32(draw_times.sum / Real64(draw_times.count))
+            Android.fast_hardware = (draw_time_ms < 30)
+            if (not Android.fast_hardware) Texture.default_pixel_format = PixelFormat.rgb16
+            log( "Calculated draw time: " + draw_time_ms )
+            local StringBuilder buffer()
+            buffer.println( draw_time_ms )
+            DataFile("android_draw_time_ms").save( buffer.to_String )
+            state = resloader_request
+          else
+            forEach (y in 0..<480 step 16)
+              forEach (x in 0..<320 step 16)
+                img_test.draw( x, y )
+              endForEach
+            endForEach
+          endIf
+
+        case downloading_res:
+          draw_progress
+      endWhich
+
+    method on( KeyEvent e ):
+      if (e.is_press(Key.keycode_escape)) System.exit(0)
+
+    method on_images_lost:
+      img_test = Image( Bitmap(16,16) )
+      load_images
+
+endClass
+

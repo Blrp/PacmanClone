@@ -1,0 +1,1181 @@
+#=====================================================================
+# multiplayer.slag
+#
+# v3.2.1 (2011.01.26)
+#
+# --------------------------------------------------------------------
+#
+# Primary classes (read individual class comments for more details).
+#
+# Client - Can send and read Messages to/from a Server.
+# Server - A collection of NetPlayer objects, each representing a
+#          connected client.
+# NetPlayer - The server-side name for one of its clients.
+# Message - A hash set of key/value pairs.
+# 
+#
+# --------------------------------------------------------------------
+#
+# Copyright 2008-2011 Plasmaworks LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# you may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at 
+#
+#   http://www.apache.org/licenses/LICENSE-2.0 
+#
+# Unless required by applicable law or agreed to in writing, 
+# software distributed under the License is distributed on an 
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific 
+# language governing permissions and limitations under the License.
+#
+#=====================================================================
+[include "network.slag"]
+[include "bit_io.slag"]
+[include "tree_map.slag"]
+
+#=====================================================================
+# Network Message, Client, Server, NetPlayer
+#=====================================================================
+
+class Message
+  # Provides a container for sending one or more key,value pairs to a 
+  # Server, which in turn may forward these messages onto other 
+  # Clients.
+  #
+  # NOTE: A single key can have multiple values assigned to it.  
+  # This is why the get method returns an array.
+  #
+  #
+  # Example:
+  #   #Creating and broadcasting a message to the server
+  #   local Message msg()
+  #   msg.add("player_move",0)  #Your own op code system
+  #   msg.add("player_id","evilmm")
+  #   msg.add( "move", 5 )
+  #   msg.add( "move", 6 )
+  #   server.send(msg)
+  #   
+  #   ..
+  #   ..
+  #
+  #   # Fetching a Message from the server receive queue
+  #   local Message msg=server.read
+  #   if (msg.contains("player_move"))
+  #     local String player_id=msg["player_id"].first.as_String
+  #     local Int32 x_pos = msg["move"][0].as_Int32
+  #     local Int32 y_pos = msg["move"][1].as_Int32
+  #     .. # do something with this info
+  #   endIf
+  CLASS_PROPERTIES
+    work_buffer() : StringBuilder
+
+  PROPERTIES
+    tags() : private TreeMap<<String,MetaTag[]>>
+
+    #size=2  : Int32  
+      #how many bytes this object will need to write out
+
+    count=0 : Int32  
+      #The total number of tags we have stored here 
+      # (can't use the tree.count, because it's tracking arrays of tags)
+
+  METHODS
+    method init:
+
+    method contains( String key ).Logical:
+      # Returns true if the message contains at least one value assigned 
+      # to 'key'.
+      return tags.contains(key)
+
+    method get( String key ).MetaTag[]:
+      # Get all the data associated with a particular key or null
+      local var node=tags.find(key)
+      if (node?)
+        return node.value
+      else
+        return null
+      endIf
+
+    method add( String key ).Message:
+      add( key, MetaTag.create(key,1) )
+      return this
+
+    method add( String key, String value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method add( String key, Int64 value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method add( String key, Int32 value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method add( String key, Real32 value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method add( String key, Real64 value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method add( String key, Logical value ).Message:
+      add( key, MetaTag.create(key,Int32(value)) )
+      return this
+
+    method add( String key, Byte[] value ).Message:
+      add( key, MetaTag.create(key,value) )
+      return this
+
+    method keys.Reader<<String>>:
+      # Returns a reader that gives you each key stored in this Message.
+      return tags.keys
+
+    private method add( String key, MetaTag tag ):
+      count++
+      #size += tag.size
+      local var node = tags.find(key)
+      if(node?)
+        node.value.add(tag)
+      else
+        local MetaTag[] tag_list(1)
+        tag_list.add(tag)
+        tags[key] = tag_list
+      endIf
+
+    method encode( ArrayList<<Char>> data ).ArrayList<<Char>>:
+      # Overlaying augment this to encrypt data.
+      # e.g forEach (i of data) data[i] ~= 24
+      #     return data
+      return data
+
+    method decode( ArrayList<<Char>> data ).ArrayList<<Char>>:
+      # Overlaying augment this to decrypt data.
+      # e.g forEach (i of data) data[i] ~= 24
+      #     return data
+      return data
+
+    method send( Socket socket, ServerOpCode op_code ):
+      local BitWriter socket_writer( socket.writer )
+
+      work_buffer.clear
+      local BitWriter buffer_writer(work_buffer)
+      buffer_writer.write( count, 16 )
+      forEach(ma in tags)
+        forEach(tag in ma)
+          tag.write(buffer_writer)
+        endForEach
+      endForEach
+
+      local var data = encode( work_buffer.data )
+       
+      if(data.count<=0xff)
+        socket_writer.write( ServerOpCode.protocol_small.flags, 8 )
+        socket_writer.write( op_code.flags, 8 )
+        socket_writer.write( data.count, 8 )
+      elseIf(data.count<=0xffff)
+        socket_writer.write( ServerOpCode.protocol_medium.flags, 8 )
+        socket_writer.write( op_code.flags, 8 )
+        socket_writer.write( data.count, 16 )
+      elseIf(data.count<=0xffffff)
+        socket_writer.write( ServerOpCode.protocol_large.flags, 8 )
+        socket_writer.write( op_code.flags, 8 )
+        socket_writer.write( data.count, 24 )
+      else
+        socket_writer.write( ServerOpCode.protocol_xlarge.flags, 8 )
+        socket_writer.write( op_code.flags, 8 )
+        socket_writer.write( data.count, 32 )
+      endIf
+      socket_writer.write( data )
+
+    method read( BitReader input, Int32 num_bytes ):
+      #used to read this message in from a socket or other data source
+      #returns the number of tags read
+      work_buffer.clear
+      forEach (1..num_bytes) work_buffer.write( input.read )
+      local var data = decode( work_buffer.data )
+      input = BitReader( data )
+
+      local Int32 _count=input.read(16)
+      forEach(i in 1.._count)
+        local MetaTag tag = MetaTag.read(input)
+        add(tag.key,tag)
+      endForEach
+
+    method to_String.String:
+      return keys.to_String
+endClass
+
+
+class MetaTag
+  # Provides a container for any primitive or string that we 
+  # might wish to send over a network connection or serialize to some 
+  # data stream
+  #
+  # MetaTag will try to compress Integers and Reals to the 
+  # smallest possible byte size for network transmission or any other 
+  # storage.
+  CLASS_PROPERTIES
+    TYPE_STRING  = 0x01 : Int32
+    TYPE_INT8    = 0x02 : Int32
+    TYPE_INT16   = 0x03 : Int32
+    TYPE_INT32   = 0x04 : Int32
+    TYPE_INT64   = 0x05 : Int32
+    TYPE_REAL32  = 0x06 : Int32
+    TYPE_REAL64  = 0x07 : Int32
+    TYPE_BYTES   = 0x08 : Int32
+    TYPE_STRING0  = 0x09 : Int32
+    TYPE_STRING1  = 0x0A : Int32
+    TYPE_STRING2  = 0x0B : Int32
+    TYPE_STRING3  = 0x0C : Int32
+    TYPE_STRING4  = 0x0D : Int32
+    TYPE_STRING5  = 0x0E : Int32
+    TYPE_STRING6  = 0x0F : Int32
+    TYPE_STRING7  = 0x10 : Int32
+    TYPE_STRING8  = 0x11 : Int32
+    TYPE_STRING9  = 0x12 : Int32
+    TYPE_STRING10  = 0x13 : Int32
+    TYPE_STRING11  = 0x14 : Int32
+    TYPE_STRING12  = 0x15 : Int32
+    TYPE_STRING13  = 0x16 : Int32
+    TYPE_STRING14  = 0x17 : Int32
+    TYPE_STRING15  = 0x18 : Int32
+    TYPE_STRING16  = 0x19 : Int32
+    TYPE_STRING17  = 0x1A : Int32
+    TYPE_STRING18  = 0x1B : Int32
+    TYPE_STRING19  = 0x1C : Int32
+    TYPE_STRING20  = 0x1D : Int32
+    TYPE_STRING21  = 0x1E : Int32
+    TYPE_STRING22  = 0x1F : Int32
+    TYPE_STRING23  = 0x20 : Int32
+    TYPE_STRING24  = 0x21 : Int32
+
+  PROPERTIES
+    key  : String
+    type : Int32
+
+  METHODS
+    method is_number.Logical:
+      return false
+
+    method is_string.Logical:
+      return false
+
+    method is_bytes.Logical:
+      return false
+
+    method is_logical.Logical:
+      return false
+
+    method write(BitWriter out):
+      out.write(type,8)
+      local var tmp_str=key.to_utf8()
+      out.write(tmp_str.count,8)
+      forEach(ch in tmp_str)
+        out.write(ch)
+      endForEach
+
+    #=====================================================================
+    # USE THESE ACCESSOR METHODS TO GET YOUR DATA FROM ANY PARTICULAR TAG
+    #=====================================================================
+    method as_Int64.Int64:
+      throw UnsupportedMethodError()
+
+    method as_Int32.Int32:
+      throw UnsupportedMethodError()
+
+    method as_Real32.Real32:
+      throw UnsupportedMethodError()
+
+    method as_Real64.Real64:
+      throw UnsupportedMethodError()
+
+    method as_Logical.Logical:
+      throw UnsupportedMethodError()
+
+    method as_String.String:
+      throw UnsupportedMethodError()
+
+    method as_bytes.Byte[]:
+      throw UnsupportedMethodError()
+
+      #method size.Int32:
+      #return key.to_utf8.count+2
+
+    method to_String.String:
+      return as_String
+
+
+  CLASS_METHODS
+    method create(String _key, String _value).MetaTag:
+      return MetaTagString(_key,_value)
+
+    method create(String _key, Real32 _value).MetaTag:
+      #println("Creating real32 $ tag" (_value))
+      if(Int64(_value)==_value) 
+        return create(_key,Int64(_value))
+      else
+        return MetaTagReal32(_key,_value)
+      endIf
+
+    method create( String _key, Real64 _value ).MetaTag:
+      if(Int64(_value)==_value) 
+        #use dynamic integer compression if the Real is equivalent to an integer, its all transparent to the user
+        #println("Compressing real64 $ into integer tag" (_value))
+        return create(_key,Int64(_value))
+      else
+        return MetaTagReal64(_key,_value)
+      endIf
+
+    method create( String _key, Int64 _value ).MetaTag:
+      #dynamic integer compression
+      if((_value>((2^31)-1)) or (_value<-(2^31)))
+        return MetaTagInt64(_key,_value)
+      elseIf((_value>((2^15)-1)) or (_value<0))
+        return MetaTagInt32(_key,Int32(_value))
+      elseIf(_value>((2^7)-1))
+        return MetaTagInt16(_key,Int32(_value))
+      else
+        #println("Compressed integer to MetaTagInt8 $" (_value.(Int32)))
+        return MetaTagInt8(_key,Int32(_value))
+      endIf
+
+    method create(String _key, Int32 _value).MetaTag:
+      #dynamic integer compression
+      if((_value>((2^15)-1)) or (_value<0))
+        return MetaTagInt32(_key,_value)
+      elseIf(_value>((2^7)-1))
+        return MetaTagInt16(_key,_value)
+      else
+        return MetaTagInt8(_key,_value)
+      endIf
+
+    method create(String _key, Byte[] _value).MetaTag:
+      return MetaTagBytes(_key,_value)
+
+    method read(BitReader input).MetaTag:
+      local Byte _type=input.read(8)
+      #println("Reading in tag of type $" (_type))
+      local String _key=read_string(input,8)
+      which(_type)
+        case TYPE_STRING: #longer length strings
+          return MetaTagString(_key,read_string(input,16))
+        case TYPE_INT8:
+          return MetaTagInt8(_key,input.read(8))
+        case TYPE_INT16:
+          return MetaTagInt16(_key,input.read(16))
+        case TYPE_INT32:
+          return MetaTagInt32(_key,input.read(32))
+        case TYPE_INT64:
+          return MetaTagInt64(_key,input.read_Int64())
+        case TYPE_REAL32:
+          return MetaTagReal32(_key,input.read(32).as_Real32())
+        case TYPE_REAL64:
+          return MetaTagReal64(_key,input.read_Int64().as_Real64())
+        case TYPE_BYTES:
+          local Int32 len=input.read(32)
+          local Byte[] blob=ListOf<<Byte>>[len]
+          forEach(i in 0..len-1)
+            blob[i]=input.read()
+          endForEach
+          return MetaTagBytes(_key,blob)
+        others:
+          if(_type>=TYPE_STRING0 and _type<=TYPE_STRING24) #condensed string logic
+            return MetaTagString(_key,read_string_of_len(input,_type-TYPE_STRING0))
+          endIf
+      endWhich
+      throw Error("Unknown tag type encountered")
+      return null
+
+    private method read_string_of_len(BitReader input,Int32 len).String:
+      local Char[] char_bytes=ListOf<<Char>>[len]
+      forEach(i in 0..len-1)
+        char_bytes[i]=input.read()
+      endForEach
+      return String.from_utf8(String(char_bytes))
+
+    private method read_string(BitReader input,Int32 count_bits).String:
+      local Int32 char_count=input.read(count_bits)
+      local Char[] char_bytes=ListOf<<Char>>[char_count]
+      forEach(i in 0..char_count-1)
+        char_bytes[i]=input.read()
+      endForEach
+      return String.from_utf8(String(char_bytes))
+
+endClass
+
+
+#Op codes that the server and client use to communicate
+enum ServerOpCode
+  CATEGORIES
+    protocol_small(0x10),protocol_medium(0x11),protocol_large(0x12),protocol_xlarge(0x13),hello(0x01), logged_in(0x02), message(0x03), ping(0x04), pong(0x05)
+
+  PROPERTIES
+    flags : Int32
+
+  METHODS
+    method init( flags ):
+endEnum
+
+class Client : Task, Reader<<Message>>
+  # Provides a connection and interface to a Slag Server on the internet
+  #
+  # Example:
+  #   Client client("66.67.68.69",12345,"pong3000","evilmm")  
+  #   ..
+  #   if(client.is_connected and something.needs_to_send_move)
+  #     local Message msg()
+  #     #verbose keys and values used for illustration
+  #     msg.add("player_move",0)
+  #     msg.add("player_id","evilmm")
+  #     msg.add("move",5)
+  #     msg.add("move",6)
+  #     client.send(msg)
+  #   endIf
+  #   
+  #   ..
+  #   ..
+  #
+  #   if(client.has_another)
+  #     local Message msg=client.read
+  #     if(msg.contains("player_move"))
+  #       local String player_id=msg.get("player_id")[0].as_String
+  #       local Int32 x_pos=msg["move"][0].as_Int32
+  #       local Int32 y_pos=msg["move"][1].as_Int32
+  #       .. # do something with this info
+  #     endIf
+  #   endIf
+  #
+  #   OR
+  #
+  #   forEach (mesg in client)
+  #     if (mesg["player_move"]?) ...
+  PROPERTIES
+    private socket=null         : Socket
+    private has_connected=false : Logical
+    private has_inited=false    : Logical
+    private connection_timer()  : Stopwatch
+    private closed=false        : Logical
+    private recv_messages()     : Message[]
+    private recv_buffer(1024)   : StringBuilder
+    private reader=null         : BitReader
+    private writer=null         : BitWriter
+    private last_xreceive()     : Stopwatch
+    address                     : String 
+    port                        : Int32 
+    game_name                   : String 
+    player_name                 : String 
+    device_id                   : String
+
+    #STATUS VARIABLES
+    lost_connection=false   : Logical  
+      #true in the event that we have lost connection to the server, after having a successful connection.  Call reconnect if desired
+
+    failed_to_connect=false : Logical  
+      #true in the event that we were unable to connect to the server.  Call reconnect if you wish to try again
+
+    is_closed=false         : Logical  
+      #true only means you closed the socket with the close method
+
+    is_connected=false      : Logical  
+      #socket is connected and logged in
+
+  METHODS
+    method init(address,port,game_name,player_name,device_id=null):
+      connection_timer.restart()
+      socket=Socket(address,port)
+      reader=BitReader(socket)
+      writer=BitWriter(socket)
+      if (device_id is null) device_id = ""
+     
+    method update:
+      # Called by the TaskManager
+      if(is_closed or failed_to_connect or lost_connection) return
+
+      if((not has_connected) and (not is_connected) and (connection_timer.elapsed_seconds>10.0))
+        # We have been trying to connect for too long, try again
+        failed_to_connect=true
+        return
+      elseIf(socket.is_connected)
+        if(not has_inited) 
+          last_xreceive.restart
+          init_server
+        endIf
+        check_recv
+        if(last_xreceive.elapsed_seconds>40.0)
+          # timed out, haven't received anything.  
+          #This is a necessary check for when devices go out of range of wifi.  The socket doesn't know its dead for awhile
+          lost_connection=true
+          is_connected=false
+        endIf
+      elseIf(has_connected and (not socket.is_connected))
+        lost_connection=true
+        is_connected=false
+      endIf
+
+    private method init_server:
+      local Message message()
+      has_inited=true
+      message.add("gname",game_name)
+      message.add("pname",player_name)
+      message.add("did",device_id) 
+      send( message, ServerOpCode.hello )
+
+    private method send_pong:
+      send( Message(), ServerOpCode.pong )
+
+    private method check_recv:
+      local Logical read_some=false
+      while (reader.has_another)
+        recv_buffer.write(reader.read())
+        read_some=true
+      endWhile
+      if(read_some?) 
+        last_xreceive.restart
+        check_for_packet
+      endIf
+
+    private method check_for_packet:
+      if(recv_buffer.count<3) return
+      local BitReader br(recv_buffer)
+
+      local Int32 protocol=br.read().(Int32)
+      local Int32 op_code=br.read().(Int32)
+      local Int32 packet_len=0
+      local Int32 header_overhead=3;
+      which(protocol)
+        case ServerOpCode.protocol_small.flags:
+          packet_len=br.read(8)
+        case ServerOpCode.protocol_medium.flags:
+          if(recv_buffer.count<4) return
+          header_overhead=4
+          packet_len=br.read(16)
+        case ServerOpCode.protocol_large.flags:
+          if(recv_buffer.count<5) return
+          header_overhead=5
+          packet_len=br.read(24)
+        case ServerOpCode.protocol_xlarge.flags:
+          if(recv_buffer.count<6) return
+          header_overhead=6
+          packet_len=br.read(32)
+        others:
+          throw Error("Wrong protocol received from server")
+      endWhich
+
+      if(recv_buffer.count<packet_len+header_overhead) return  #Not enough data in our buffer yet
+      which(op_code)
+        case ServerOpCode.message.flags:
+          #read a message
+          local Message msg=Message()
+          msg.read(br,packet_len)
+          recv_messages.add(msg)
+        case ServerOpCode.ping.flags:
+          #Client has been idle for too long, server is testing the connection.  Respond or server will kick us.
+          send_pong
+        case ServerOpCode.logged_in.flags:
+          #println("Client got login op_code from server, now connected to server!")
+          if(socket.is_connected) 
+            is_connected=true
+            has_connected=true
+          endIf
+      endWhich
+
+      #slide the byte buffer back to purge the data we just read from it
+      recv_buffer.discard( 0, (packet_len+header_overhead) - 1 )
+      check_for_packet  #recursive call to read any more packets that may have been appended to the data stream
+
+    method close:
+      is_closed=true
+      is_connected=false
+      recv_messages.clear
+      reader=null
+      writer=null
+      socket.close
+
+    method reconnect:
+      # Call this to reconnect to the server in the even that the 'lost_connection' 
+      # or 'failed_to_connect' flag is set, or if you have closed the connection
+      is_closed=false
+      reader=null
+      writer=null
+      has_inited=false
+      is_connected=false
+      has_connected=false
+      lost_connection=false
+      recv_messages.clear
+      connection_timer.restart()
+      socket=Socket(address,port)
+      reader=BitReader(socket)
+      writer=BitWriter(socket)
+
+    method has_another.Logical:
+      #query if there is a received message waiting for you to process
+      return (is_connected and recv_messages.count?)
+
+    method peek.Message:
+      return recv_messages.first 
+
+    method read.Message:
+      #get the next received message in the queue
+      return recv_messages.remove_first 
+
+    method send( Message message ).Logical:
+      return send( message, ServerOpCode.message )
+
+    private method send( Message message, ServerOpCode op_code ).Logical:
+      if (not is_connected and op_code isNot ServerOpCode.hello) return false
+      message.send( socket, op_code )
+      return true
+
+endClass
+
+abstract class Server : Task
+  # A foundation upon which to build a multi-client server.  To use:
+  # - Extend class Server or ConsoleServer.
+  # - augment class NetPlayer to give it any extra properties you want.
+  # - Override methods on_player_joined(NetPlayer), on_player_left(NetPlayer), 
+  #   and on_player_message(NetPlayer,Message).
+  # - For example, to have any player message be forwarded to every other player:
+  #     method on_player_message( NetPlayer player, Message message ):
+  #       forEach (other_player in xplayers)
+  #         if (player isNot other_player) player.send(message)
+  #       endForEach
+  #
+  #   Typically you wouldn't use "xplayers"; you'd keep your own NetPlayer lists
+  #   for various games and roles.
+  #
+  # - Override on_shut_down if desired. In Plasmacore, override 
+  #   Application::on_exit_request to call on_shut_down as your app is exiting.
+  #   In ConsoleServer this is done for you.
+  PROPERTIES
+    private listener=null : ServerSocket
+    private xplayers()    : NetPlayer[] #internal list of actual connections, not for outside use
+    port                  : Int32
+
+  METHODS
+    method init(port):
+      reconnect
+
+    method reconnect.Logical:
+      if (listener?) return true
+      println("Multiplayer server attempting to listen on port "+port+"...")
+      try
+        listener=ServerSocket(port)
+        println("Multiplayer server listening on port "+port+"!")
+        return true
+      catch(Error err)
+        println("ERROR: Port $ already in use (auto-retry in 5 seconds)." (port)) 
+        return false
+      endTry
+
+    method wait_for_connection:
+      while (not reconnect) sleep(5000)
+
+    method on_player_joined(NetPlayer player): abstract
+      # Override this.
+
+    method on_player_left(NetPlayer player): abstract
+      # Override this.
+
+    method on_player_message(NetPlayer source, Message message): abstract
+      # Override this.
+
+    method on_shut_down:
+      # Override this if desired.
+
+    method update:
+      # Called by the TaskManager
+      if(not listener?) return
+      if(listener.has_pending_connection)
+        xplayers.add(NetPlayer(listener.accept,this))
+      endIf
+
+      forEach(player in xplayers)
+        try
+          player.update
+        catch(Error err)
+          println("Client had error (kicking): "+err)
+          player.close
+        endTry
+        if(not player.is_socket_connected)
+          try
+            if(player.joined) 
+              on_player_left(player)
+              println( "# player(s) total".pluralize(xplayers.count-1) )
+            endIf
+          catch(Error err)
+            println("NetPlayer leaving error: "+err)
+          endTry
+
+          removeCurrent player
+      
+        elseIf((not player.joined) and player.ready_to_join)
+          player.joined=true
+          try
+            on_player_joined(player)
+            println( "# player(s) total".pluralize(xplayers.count) )
+          catch(Error err)
+            println("NetPlayer join error (kicking): "+err)
+            try
+              player.close
+            catch(Error ignore)
+            endTry
+          endTry
+        endIf
+      endForEach
+
+    method close:
+      #To shutdown the server and free the port
+      listener.close
+      forEach(player in xplayers)
+        player.close
+      endForEach
+      xplayers.clear
+
+endClass
+
+class ConsoleServer : Server
+  # A foundation upon which to build a console-based multi-client server.  To use:
+  # - Extend class Server or ConsoleServer.
+  # - Override methods on_player_joined(NetPlayer), on_player_left(NetPlayer), 
+  #   and on_player_message(NetPlayer).
+  # - Override on_shut_down if desired and press CTRL+C to shut the server down
+  #   (look into Unix "screen"s that can be detached as daemons).
+  PROPERTIES
+    shutting_down : Logical
+
+  METHODS
+    method init( port ):
+      wait_for_connection
+      System.catch_control_c = true
+      while (not shutting_down)
+        update
+        if (System.control_c_pressed)
+          print( "SERVER INTERRUPT (type help for options)\n> " )
+          local var cmd = stdin.read_line
+          while (cmd == "help")
+            print_menu
+            print( "> " )
+            cmd = stdin.read_line
+          endWhile
+          handle_command( cmd )
+          if (not shutting_down) println( "(resuming service)" )
+        endIf
+        if (xplayers.count?) sleep( 1000 / 60 )
+        else sleep(500)  #nice optimization Abe //Ty
+      endWhile
+      on_shut_down
+
+    method shut_down:
+      shutting_down = true
+      println( "Shutting down" )
+
+    method print_menu:
+      # Override this with your own options.
+      println( "  stop  - Shuts down the server." )
+      println( "  help  - Shows this menu." )
+      println
+      println( "  [RETURN] or any other command resumes service." )
+
+    method handle_command( String cmd ):
+      # Override this with your own options.
+      which (cmd)
+        case "stop", "quit": shut_down
+        others:
+      endWhich
+
+endClass
+
+class NetPlayer
+  # Augment class NetPlayer to give it any extra properties you want to
+  # use in Server code.
+  PROPERTIES
+    private socket=null           : Socket
+    private has_connected=false   : Logical
+    private closed=false          : Logical
+    private recv_buffer(1024)     : StringBuilder
+    private reader=null           : BitReader
+    private writer=null           : BitWriter
+    private join_timer()          : Stopwatch
+    private owner                 : Server
+    private last_xping()          : Stopwatch
+    private last_xreceive()       : Stopwatch
+    private last_xsend()       : Stopwatch
+
+
+    #INTERNAL USE
+    ready_to_join=false           : Logical  
+      # Toggled on after receiving proper hello message.
+    joined=false                  : Logical  
+      # Whether or not this player has been passed on to the mutliplayer server 
+      # user code via on_player_joined.
+
+    #META INFO ABOUT THIS PLAYER
+    player_name="uninited_player"        : String 
+    game_name="uninited_player"        : String 
+    device_id="uninited_player"        : String 
+
+    #STATUS VARIABLES
+    lost_connection=false         : Logical  
+      # True in the event that we have lost connection to the server, 
+      # after having a successful connection.  Call reconnect if desired.
+
+    is_closed=false              : Logical  
+      # True only means you closed the socket with the close method.
+    is_connected=true            : Logical  
+      # Socket is connected and logged in.
+
+  METHODS
+    method init(socket,owner):
+      reader=BitReader(socket)
+      writer=BitWriter(socket)
+      
+    method is_socket_connected.Logical:
+      return socket.is_connected
+
+    method update:
+      if(is_closed or lost_connection) return
+
+      if((not ready_to_join) and join_timer.elapsed_seconds>8.0)
+        lost_connection=true
+        close
+        return
+      endIf
+
+      if(!socket.is_connected or last_xreceive.elapsed_seconds()>40.0)
+        lost_connection=true
+        close
+        return
+      endIf
+
+      if(is_connected)
+        if((last_xsend.elapsed_seconds()>30 or last_xreceive.elapsed_seconds()>30.0) and last_xping.elapsed_seconds()>30.0)
+          last_xping.restart
+          send_ping #send a ping after X seconds of send or receive inactivity
+        endIf
+
+        if(last_xreceive.elapsed_seconds()>40.0)
+          lost_connection=true
+          close
+          return
+        endIf
+      endIf
+
+      #if we get here, then check for new data
+      check_recv
+
+    private method send_ping:
+      send( Message(), ServerOpCode.ping )
+
+    private method check_recv:
+      local Logical read_some=false
+      while (reader.has_another)
+        recv_buffer.write(reader.read())
+        read_some=true
+      endWhile
+      if(read_some?) 
+        last_xreceive.restart
+        check_for_packet
+      endIf
+
+    private method check_for_packet:
+      if(recv_buffer.count<3) return
+      local BitReader br(recv_buffer)
+
+      local Int32 protocol=br.read().(Int32)
+      local Int32 op_code=br.read().(Int32)
+      local Int32 packet_len=0
+      local Int32 header_overhead=3;
+      which(protocol)
+        case ServerOpCode.protocol_small.flags:
+          packet_len=br.read(8)
+        case ServerOpCode.protocol_medium.flags:
+          if(recv_buffer.count<4) return
+          header_overhead=4
+          packet_len=br.read(16)
+        case ServerOpCode.protocol_large.flags:
+          if(recv_buffer.count<5) return
+          header_overhead=5
+          packet_len=br.read(24)
+        case ServerOpCode.protocol_xlarge.flags:
+          if(recv_buffer.count<6) return
+          header_overhead=6
+          packet_len=br.read(32)
+        others:
+          throw Error("Wrong protocol received from client")
+      endWhich
+      if(recv_buffer.count<packet_len+header_overhead) return  #Not enough data in our buffer yet
+
+      which(op_code)
+        case ServerOpCode.message.flags:
+          #read a message
+          local Message msg=Message()
+          msg.read(br,packet_len)
+          owner.on_player_message(this,msg)
+        case ServerOpCode.hello.flags:
+          local Message msg()
+          msg.read(br,packet_len)
+          try
+            player_name=msg.get("pname")[0].as_String
+            game_name=msg.get("gname")[0].as_String
+            device_id=msg.get("did")[0].as_String
+            if (device_id == "") device_id = socket.remote_ip
+            #send a message back to tell them they are now logged in
+          catch(Error ignore)
+            throw Error("Invalid login message from player")
+          endTry
+          send( Message().add("status","logged_in"), ServerOpCode.logged_in )
+          is_connected=true
+          ready_to_join=true
+      endWhich
+
+      #slide the byte buffer back to purge the data we just read from it
+      recv_buffer.discard( 0, (packet_len+header_overhead) - 1 )
+      check_for_packet  #recursive call to read any more packets that may have been appended to the data stream
+
+    method quit:
+      close
+
+    method close:
+      is_closed=true
+      is_connected=false
+      reader=null
+      writer=null
+      socket.close
+
+    method send(Message message).Logical:
+      return send( message, ServerOpCode.message )
+
+    private method send( Message message, ServerOpCode op_code ).Logical:
+      if (not is_connected) return false
+      message.send( socket, op_code )
+      last_xsend.restart
+      return true
+
+endClass
+
+
+###########   DATA TYPE CONTAINERS FOR THE METATAG AND MESSAGE CLASSES    ##################
+underlying aspect MetaTagConversions
+  # Internal use.
+  METHODS
+    method as_Int32.Int32:
+      return Int32(value)
+
+    method as_Int64.Int64:
+      return Int64(value)
+
+    method as_Real32.Real32:
+      return Real32(value)
+
+    method as_Real64.Real64:
+      return Real64(value)
+
+    method as_Logical.Logical:
+      return Logical(value)
+
+    method as_String.String:
+      return value.to_String()
+endAspect
+
+class MetaTagString : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : String
+  METHODS
+    method init(key,value):
+      type=TYPE_STRING  #this might be modified during a write call, to create a condensed type
+
+    method is_string.Logical:
+      return true
+
+    method as_Int32.Int32:
+      return value.to_Int32
+
+    method as_Int64.Int64:
+      return value.to_Int64
+
+    method as_Real32.Real32:
+      return Real32(value.to_Real64)
+
+    method as_Real64.Real64:
+      return value.to_Real64
+
+    method as_Logical.Logical:
+      which (value)
+        case "true", "yes", "1": return true
+        case "false", "no", "0": return false
+        others: return void
+      endWhich
+      
+    method as_String.String:
+      return value
+
+    method write(BitWriter out):
+      local String tmp_str=value.to_utf8()
+      if(tmp_str.count>24)
+        type=TYPE_STRING
+      else
+        #change the type if necessary
+        type=TYPE_STRING0+tmp_str.count
+      endIf
+      prior.write(out)  #allow default writer to write key and type out
+      if(type==TYPE_STRING)
+        out.write(tmp_str.count,16)
+        forEach(ch in tmp_str)
+          out.write(ch)
+        endForEach
+      else
+        #optimized string, skip writing the length because the length is coded into the type
+        forEach(ch in tmp_str)
+          out.write(ch)
+        endForEach
+      endIf
+endClass
+
+class MetaTagReal32 : MetaTag, MetaTagConversions
+# Internal use.
+  PROPERTIES
+    value : Real32
+  METHODS
+    method init(key,value):
+      type=TYPE_REAL32
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write(value.as_Int32(),32);
+
+    method is_number.Logical:
+      return true
+
+      #method size().Int32:
+      #return prior.size()+4
+endClass
+
+class MetaTagReal64 : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : Real64
+  METHODS
+    method init(key,value):
+      type=TYPE_REAL64
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write_Int64(value.as_Int64());
+
+    method is_number.Logical:
+      return true
+
+      #method size().Int32:
+      #return prior.size()+8
+endClass
+
+class MetaTagInt8 : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : Int32
+  METHODS
+    method init(key,value):
+      type=TYPE_INT8
+
+    method is_number.Logical:
+      return true
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write(value,8);
+
+      #method size().Int32:
+      #return prior.size()+1
+endClass
+
+class MetaTagInt16 : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : Int32
+  METHODS
+    method init(key,value):
+      type=TYPE_INT16
+
+    method is_number.Logical:
+      return true
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write(value,16);
+
+      #method size().Int32:
+      #return prior.size()+2
+endClass
+
+class MetaTagInt32 : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : Int32
+  METHODS
+    method init(key,value):
+      type=TYPE_INT32
+
+    method is_number.Logical:
+      return true
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write(value,32);
+
+      #method size().Int32:
+      #return prior.size()+4
+endClass
+
+
+class MetaTagInt64 : MetaTag, MetaTagConversions
+  # Internal use.
+  PROPERTIES
+    value : Int64
+  METHODS
+    method init(key,value):
+      type=TYPE_INT64
+
+    method is_number.Logical:
+      return true
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write_Int64(value);
+
+      #method size().Int32:
+      #return prior.size()+8
+endClass
+
+class MetaTagBytes : MetaTag
+  # Internal use.
+  PROPERTIES
+    value : Byte[]
+  METHODS
+    method init(key,value):
+      type=TYPE_BYTES
+
+    method is_bytes.Logical:
+      return true
+
+    method as_bytes.Byte[]:
+      return value
+
+    method as_String.String:
+      return value.to_String()
+
+    method write(BitWriter out):
+      prior.write(out)
+      out.write(value.count,32)
+      forEach(b in value)
+        out.write(b,8)
+      endForEach
+
+      #method size().Int32:
+      #return prior.size()+4+value.count
+endClass
+

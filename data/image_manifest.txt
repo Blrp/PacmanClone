@@ -1,0 +1,1322 @@
+# THIS FILE IS AUTOMATICALLY REFRESHED WITH EVERY BUILD
+#
+# - Image filenames are added for you.
+#
+# - You can delete any line that starts with two spaces for readability
+#   (that data will be regenerated).
+#
+# - You can define new categories.
+#
+# - Images in [category standalone] will not be placed on texture sheets.
+#
+# - Images in [category permanent] will be retained after a call to
+#   ImageManager.release_all().
+#
+# - You can follow any image filename with one of the following options:
+#
+#   composite           - Breaks a large image up into manageable chunks.
+#                         Load as a CompositeImage("filename").
+#
+#   split 4x2           - Splits an image up into (e.g.) 2 rows of 4 tiles.
+#                         Load as an image list "Image[](filename)" or
+#                         as an Animation("filename").
+#
+#   font                - Separates the character images of a fixed-width
+#   font 95               font.  May be followed by a count of how many
+#                         characters are in the font (default 95 - 
+#                         Unicode 32..126).
+#
+#   varfont             - Separates the character images of a variable-width
+#                         (proportional) font.  An extra row of pixels
+#                         should be at the top of the font image with
+#                         alternating colors to indicate letter widths.
+#                         The number of characters is automatically
+#                         determined.  Load as Font("filename").
+#
+
+[category standalone]
+"mapwhite.png"
+"logo.png"
+
+[category general]
+"map.png" split 28x36
+  size 18 18
+  tile 0 25 168
+  tile 0 43 168
+  tile 0 61 168
+  tile 0 79 168
+  tile 0 97 168
+  tile 0 115 168
+  tile 0 133 168
+  tile 0 151 168
+  tile 0 169 168
+  tile 0 187 168
+  tile 0 205 168
+  tile 0 223 168
+  tile 0 241 168
+  tile 0 259 168
+  tile 0 277 168
+  tile 0 295 168
+  tile 0 313 168
+  tile 0 331 168
+  tile 0 349 168
+  tile 0 367 168
+  tile 0 385 168
+  tile 0 403 168
+  tile 0 421 168
+  tile 0 439 168
+  tile 0 457 168
+  tile 0 475 168
+  tile 0 493 168
+  tile 0 25 186
+  tile 0 43 186
+  tile 0 61 186
+  tile 0 79 186
+  tile 0 97 186
+  tile 0 115 186
+  tile 0 133 186
+  tile 0 151 186
+  tile 0 169 186
+  tile 0 187 186
+  tile 0 205 186
+  tile 0 223 186
+  tile 0 241 186
+  tile 0 259 186
+  tile 0 277 186
+  tile 0 295 186
+  tile 0 313 186
+  tile 0 331 186
+  tile 0 349 186
+  tile 0 367 186
+  tile 0 385 186
+  tile 0 403 186
+  tile 0 421 186
+  tile 0 439 186
+  tile 0 457 186
+  tile 0 475 186
+  tile 0 493 186
+  tile 0 25 204
+  tile 0 43 204
+  tile 0 61 204
+  tile 0 79 204
+  tile 0 97 204
+  tile 0 115 204
+  tile 0 133 204
+  tile 0 151 204
+  tile 0 169 204
+  tile 0 187 204
+  tile 0 205 204
+  tile 0 223 204
+  tile 0 241 204
+  tile 0 259 204
+  tile 0 277 204
+  tile 0 295 204
+  tile 0 313 204
+  tile 0 331 204
+  tile 0 349 204
+  tile 0 367 204
+  tile 0 385 204
+  tile 0 403 204
+  tile 0 421 204
+  tile 0 439 204
+  tile 0 457 204
+  tile 0 475 204
+  tile 0 493 204
+  tile 0 25 222
+  tile 0 43 222
+  tile 0 61 222
+  tile 0 79 222
+  tile 0 97 222
+  tile 0 115 222
+  tile 0 133 222
+  tile 0 151 222
+  tile 0 169 222
+  tile 0 187 222
+  tile 0 205 222
+  tile 0 223 222
+  tile 0 241 222
+  tile 0 259 222
+  tile 0 277 222
+  tile 0 295 222
+  tile 0 313 222
+  tile 0 331 222
+  tile 0 349 222
+  tile 0 367 222
+  tile 0 385 222
+  tile 0 403 222
+  tile 0 421 222
+  tile 0 439 222
+  tile 0 457 222
+  tile 0 475 222
+  tile 0 493 222
+  tile 0 25 240
+  tile 0 43 240
+  tile 0 61 240
+  tile 0 79 240
+  tile 0 97 240
+  tile 0 115 240
+  tile 0 133 240
+  tile 0 151 240
+  tile 0 169 240
+  tile 0 187 240
+  tile 0 205 240
+  tile 0 223 240
+  tile 0 241 240
+  tile 0 259 240
+  tile 0 277 240
+  tile 0 295 240
+  tile 0 313 240
+  tile 0 331 240
+  tile 0 349 240
+  tile 0 367 240
+  tile 0 385 240
+  tile 0 403 240
+  tile 0 421 240
+  tile 0 439 240
+  tile 0 457 240
+  tile 0 475 240
+  tile 0 493 240
+  tile 0 25 258
+  tile 0 43 258
+  tile 0 61 258
+  tile 0 79 258
+  tile 0 97 258
+  tile 0 115 258
+  tile 0 133 258
+  tile 0 151 258
+  tile 0 169 258
+  tile 0 187 258
+  tile 0 205 258
+  tile 0 223 258
+  tile 0 241 258
+  tile 0 259 258
+  tile 0 277 258
+  tile 0 295 258
+  tile 0 313 258
+  tile 0 331 258
+  tile 0 349 258
+  tile 0 367 258
+  tile 0 385 258
+  tile 0 403 258
+  tile 0 421 258
+  tile 0 439 258
+  tile 0 457 258
+  tile 0 475 258
+  tile 0 493 258
+  tile 0 25 276
+  tile 0 43 276
+  tile 0 61 276
+  tile 0 79 276
+  tile 0 97 276
+  tile 0 115 276
+  tile 0 133 276
+  tile 0 151 276
+  tile 0 169 276
+  tile 0 187 276
+  tile 0 205 276
+  tile 0 223 276
+  tile 0 241 276
+  tile 0 259 276
+  tile 0 277 276
+  tile 0 295 276
+  tile 0 313 276
+  tile 0 331 276
+  tile 0 349 276
+  tile 0 367 276
+  tile 0 385 276
+  tile 0 403 276
+  tile 0 421 276
+  tile 0 439 276
+  tile 0 457 276
+  tile 0 475 276
+  tile 0 493 276
+  tile 0 25 294
+  tile 0 43 294
+  tile 0 61 294
+  tile 0 79 294
+  tile 0 97 294
+  tile 0 115 294
+  tile 0 133 294
+  tile 0 151 294
+  tile 0 169 294
+  tile 0 187 294
+  tile 0 205 294
+  tile 0 223 294
+  tile 0 241 294
+  tile 0 259 294
+  tile 0 277 294
+  tile 0 295 294
+  tile 0 313 294
+  tile 0 331 294
+  tile 0 349 294
+  tile 0 367 294
+  tile 0 385 294
+  tile 0 403 294
+  tile 0 421 294
+  tile 0 439 294
+  tile 0 457 294
+  tile 0 475 294
+  tile 0 493 294
+  tile 0 25 312
+  tile 0 43 312
+  tile 0 61 312
+  tile 0 79 312
+  tile 0 97 312
+  tile 0 115 312
+  tile 0 133 312
+  tile 0 151 312
+  tile 0 169 312
+  tile 0 187 312
+  tile 0 205 312
+  tile 0 223 312
+  tile 0 241 312
+  tile 0 259 312
+  tile 0 277 312
+  tile 0 295 312
+  tile 0 313 312
+  tile 0 331 312
+  tile 0 349 312
+  tile 0 367 312
+  tile 0 385 312
+  tile 0 403 312
+  tile 0 421 312
+  tile 0 439 312
+  tile 0 457 312
+  tile 0 475 312
+  tile 0 493 312
+  tile 0 25 330
+  tile 0 43 330
+  tile 0 61 330
+  tile 0 79 330
+  tile 0 97 330
+  tile 0 115 330
+  tile 0 133 330
+  tile 0 151 330
+  tile 0 169 330
+  tile 0 187 330
+  tile 0 205 330
+  tile 0 223 330
+  tile 0 241 330
+  tile 0 259 330
+  tile 0 277 330
+  tile 0 295 330
+  tile 0 313 330
+  tile 0 331 330
+  tile 0 349 330
+  tile 0 367 330
+  tile 0 385 330
+  tile 0 403 330
+  tile 0 421 330
+  tile 0 439 330
+  tile 0 457 330
+  tile 0 475 330
+  tile 0 493 330
+  tile 0 25 348
+  tile 0 43 348
+  tile 0 61 348
+  tile 0 79 348
+  tile 0 97 348
+  tile 0 115 348
+  tile 0 133 348
+  tile 0 151 348
+  tile 0 169 348
+  tile 0 187 348
+  tile 0 205 348
+  tile 0 223 348
+  tile 0 241 348
+  tile 0 259 348
+  tile 0 277 348
+  tile 0 295 348
+  tile 0 313 348
+  tile 0 331 348
+  tile 0 349 348
+  tile 0 367 348
+  tile 0 385 348
+  tile 0 403 348
+  tile 0 421 348
+  tile 0 439 348
+  tile 0 457 348
+  tile 0 475 348
+  tile 0 493 348
+  tile 0 25 366
+  tile 0 43 366
+  tile 0 61 366
+  tile 0 79 366
+  tile 0 97 366
+  tile 0 115 366
+  tile 0 133 366
+  tile 0 151 366
+  tile 0 169 366
+  tile 0 187 366
+  tile 0 205 366
+  tile 0 223 366
+  tile 0 241 366
+  tile 0 259 366
+  tile 0 277 366
+  tile 0 295 366
+  tile 0 313 366
+  tile 0 331 366
+  tile 0 349 366
+  tile 0 367 366
+  tile 0 385 366
+  tile 0 403 366
+  tile 0 421 366
+  tile 0 439 366
+  tile 0 457 366
+  tile 0 475 366
+  tile 0 493 366
+  tile 0 25 384
+  tile 0 43 384
+  tile 0 61 384
+  tile 0 79 384
+  tile 0 97 384
+  tile 0 115 384
+  tile 0 133 384
+  tile 0 151 384
+  tile 0 169 384
+  tile 0 187 384
+  tile 0 205 384
+  tile 0 223 384
+  tile 0 241 384
+  tile 0 259 384
+  tile 0 277 384
+  tile 0 295 384
+  tile 0 313 384
+  tile 0 331 384
+  tile 0 349 384
+  tile 0 367 384
+  tile 0 385 384
+  tile 0 403 384
+  tile 0 421 384
+  tile 0 439 384
+  tile 0 457 384
+  tile 0 475 384
+  tile 0 493 384
+  tile 0 25 402
+  tile 0 43 402
+  tile 0 61 402
+  tile 0 79 402
+  tile 0 97 402
+  tile 0 115 402
+  tile 0 133 402
+  tile 0 151 402
+  tile 0 169 402
+  tile 0 187 402
+  tile 0 205 402
+  tile 0 223 402
+  tile 0 241 402
+  tile 0 259 402
+  tile 0 277 402
+  tile 0 295 402
+  tile 0 313 402
+  tile 0 331 402
+  tile 0 349 402
+  tile 0 367 402
+  tile 0 385 402
+  tile 0 403 402
+  tile 0 421 402
+  tile 0 439 402
+  tile 0 457 402
+  tile 0 475 402
+  tile 0 493 402
+  tile 0 25 420
+  tile 0 43 420
+  tile 0 61 420
+  tile 0 79 420
+  tile 0 97 420
+  tile 0 115 420
+  tile 0 133 420
+  tile 0 151 420
+  tile 0 169 420
+  tile 0 187 420
+  tile 0 205 420
+  tile 0 223 420
+  tile 0 241 420
+  tile 0 259 420
+  tile 0 277 420
+  tile 0 295 420
+  tile 0 313 420
+  tile 0 331 420
+  tile 0 349 420
+  tile 0 367 420
+  tile 0 385 420
+  tile 0 403 420
+  tile 0 421 420
+  tile 0 439 420
+  tile 0 457 420
+  tile 0 475 420
+  tile 0 493 420
+  tile 0 25 438
+  tile 0 43 438
+  tile 0 61 438
+  tile 0 79 438
+  tile 0 97 438
+  tile 0 115 438
+  tile 0 133 438
+  tile 0 151 438
+  tile 0 169 438
+  tile 0 187 438
+  tile 0 205 438
+  tile 0 223 438
+  tile 0 241 438
+  tile 0 259 438
+  tile 0 277 438
+  tile 0 295 438
+  tile 0 313 438
+  tile 0 331 438
+  tile 0 349 438
+  tile 0 367 438
+  tile 0 385 438
+  tile 0 403 438
+  tile 0 421 438
+  tile 0 439 438
+  tile 0 457 438
+  tile 0 475 438
+  tile 0 493 438
+  tile 0 25 456
+  tile 0 43 456
+  tile 0 61 456
+  tile 0 79 456
+  tile 0 97 456
+  tile 0 115 456
+  tile 0 133 456
+  tile 0 151 456
+  tile 0 169 456
+  tile 0 187 456
+  tile 0 205 456
+  tile 0 223 456
+  tile 0 241 456
+  tile 0 259 456
+  tile 0 277 456
+  tile 0 295 456
+  tile 0 313 456
+  tile 0 331 456
+  tile 0 349 456
+  tile 0 367 456
+  tile 0 385 456
+  tile 0 403 456
+  tile 0 421 456
+  tile 0 439 456
+  tile 0 457 456
+  tile 0 475 456
+  tile 0 493 456
+  tile 0 25 474
+  tile 0 43 474
+  tile 0 61 474
+  tile 0 79 474
+  tile 0 97 474
+  tile 0 115 474
+  tile 0 133 474
+  tile 0 151 474
+  tile 0 169 474
+  tile 0 187 474
+  tile 0 205 474
+  tile 0 223 474
+  tile 0 241 474
+  tile 0 259 474
+  tile 0 277 474
+  tile 0 295 474
+  tile 0 313 474
+  tile 0 331 474
+  tile 0 349 474
+  tile 0 367 474
+  tile 0 385 474
+  tile 0 403 474
+  tile 0 421 474
+  tile 0 439 474
+  tile 0 457 474
+  tile 0 475 474
+  tile 0 493 474
+  tile 0 25 492
+  tile 0 43 492
+  tile 0 61 492
+  tile 0 79 492
+  tile 0 97 492
+  tile 0 115 492
+  tile 0 133 492
+  tile 0 151 492
+  tile 0 169 492
+  tile 0 187 492
+  tile 0 205 492
+  tile 0 223 492
+  tile 0 241 492
+  tile 0 259 492
+  tile 0 277 492
+  tile 0 295 492
+  tile 0 313 492
+  tile 0 331 492
+  tile 0 349 492
+  tile 0 367 492
+  tile 0 385 492
+  tile 0 403 492
+  tile 0 421 492
+  tile 0 439 492
+  tile 0 457 492
+  tile 0 475 492
+  tile 0 493 492
+  tile 0 0 27
+  tile 0 0 45
+  tile 0 0 63
+  tile 0 0 81
+  tile 0 0 99
+  tile 0 0 117
+  tile 0 0 135
+  tile 0 0 153
+  tile 0 0 171
+  tile 0 0 189
+  tile 0 0 207
+  tile 0 0 225
+  tile 0 0 243
+  tile 0 0 261
+  tile 0 0 279
+  tile 0 0 297
+  tile 0 0 315
+  tile 0 0 333
+  tile 0 0 351
+  tile 0 0 369
+  tile 0 0 387
+  tile 0 0 405
+  tile 0 0 423
+  tile 0 0 441
+  tile 0 0 459
+  tile 0 0 477
+  tile 1 0 0
+  tile 1 18 0
+  tile 1 36 0
+  tile 1 54 0
+  tile 1 72 0
+  tile 1 90 0
+  tile 1 108 0
+  tile 1 126 0
+  tile 1 144 0
+  tile 1 162 0
+  tile 1 180 0
+  tile 1 198 0
+  tile 1 216 0
+  tile 1 234 0
+  tile 1 252 0
+  tile 1 270 0
+  tile 1 288 0
+  tile 1 306 0
+  tile 1 324 0
+  tile 1 342 0
+  tile 1 360 0
+  tile 1 378 0
+  tile 1 396 0
+  tile 1 414 0
+  tile 1 432 0
+  tile 1 450 0
+  tile 1 468 0
+  tile 1 486 0
+  tile 1 0 18
+  tile 1 18 18
+  tile 1 36 18
+  tile 1 54 18
+  tile 1 72 18
+  tile 1 90 18
+  tile 1 108 18
+  tile 1 126 18
+  tile 1 144 18
+  tile 1 162 18
+  tile 1 180 18
+  tile 1 198 18
+  tile 1 216 18
+  tile 1 234 18
+  tile 1 252 18
+  tile 1 270 18
+  tile 1 288 18
+  tile 1 306 18
+  tile 1 324 18
+  tile 1 342 18
+  tile 1 360 18
+  tile 1 378 18
+  tile 1 396 18
+  tile 1 414 18
+  tile 1 432 18
+  tile 1 450 18
+  tile 1 468 18
+  tile 1 486 18
+  tile 1 0 36
+  tile 1 18 36
+  tile 1 36 36
+  tile 1 54 36
+  tile 1 72 36
+  tile 1 90 36
+  tile 1 108 36
+  tile 1 126 36
+  tile 1 144 36
+  tile 1 162 36
+  tile 1 180 36
+  tile 1 198 36
+  tile 1 216 36
+  tile 1 234 36
+  tile 1 252 36
+  tile 1 270 36
+  tile 1 288 36
+  tile 1 306 36
+  tile 1 324 36
+  tile 1 342 36
+  tile 1 360 36
+  tile 1 378 36
+  tile 1 396 36
+  tile 1 414 36
+  tile 1 432 36
+  tile 1 450 36
+  tile 1 468 36
+  tile 1 486 36
+  tile 1 0 54
+  tile 1 18 54
+  tile 1 36 54
+  tile 1 54 54
+  tile 1 72 54
+  tile 1 90 54
+  tile 1 108 54
+  tile 1 126 54
+  tile 1 144 54
+  tile 1 162 54
+  tile 1 180 54
+  tile 1 198 54
+  tile 1 216 54
+  tile 1 234 54
+  tile 1 252 54
+  tile 1 270 54
+  tile 1 288 54
+  tile 1 306 54
+  tile 1 324 54
+  tile 1 342 54
+  tile 1 360 54
+  tile 1 378 54
+  tile 1 396 54
+  tile 1 414 54
+  tile 1 432 54
+  tile 1 450 54
+  tile 1 468 54
+  tile 1 486 54
+  tile 1 0 72
+  tile 1 18 72
+  tile 1 36 72
+  tile 1 54 72
+  tile 1 72 72
+  tile 1 90 72
+  tile 1 108 72
+  tile 1 126 72
+  tile 1 144 72
+  tile 1 162 72
+  tile 1 180 72
+  tile 1 198 72
+  tile 1 216 72
+  tile 1 234 72
+  tile 1 252 72
+  tile 1 270 72
+  tile 1 288 72
+  tile 1 306 72
+  tile 1 324 72
+  tile 1 342 72
+  tile 1 360 72
+  tile 1 378 72
+  tile 1 396 72
+  tile 1 414 72
+  tile 1 432 72
+  tile 1 450 72
+  tile 1 468 72
+  tile 1 486 72
+  tile 1 0 90
+  tile 1 18 90
+  tile 1 36 90
+  tile 1 54 90
+  tile 1 72 90
+  tile 1 90 90
+  tile 1 108 90
+  tile 1 126 90
+  tile 1 144 90
+  tile 1 162 90
+  tile 1 180 90
+  tile 1 198 90
+  tile 1 216 90
+  tile 1 234 90
+  tile 1 252 90
+  tile 1 270 90
+  tile 1 288 90
+  tile 1 306 90
+  tile 1 324 90
+  tile 1 342 90
+  tile 1 360 90
+  tile 1 378 90
+  tile 1 396 90
+  tile 1 414 90
+  tile 1 432 90
+  tile 1 450 90
+  tile 1 468 90
+  tile 1 486 90
+  tile 1 0 108
+  tile 1 18 108
+  tile 1 36 108
+  tile 1 54 108
+  tile 1 72 108
+  tile 1 90 108
+  tile 1 108 108
+  tile 1 126 108
+  tile 1 144 108
+  tile 1 162 108
+  tile 1 180 108
+  tile 1 198 108
+  tile 1 216 108
+  tile 1 234 108
+  tile 1 252 108
+  tile 1 270 108
+  tile 1 288 108
+  tile 1 306 108
+  tile 1 324 108
+  tile 1 342 108
+  tile 1 360 108
+  tile 1 378 108
+  tile 1 396 108
+  tile 1 414 108
+  tile 1 432 108
+  tile 1 450 108
+  tile 1 468 108
+  tile 1 486 108
+  tile 1 0 126
+  tile 1 18 126
+  tile 1 36 126
+  tile 1 54 126
+  tile 1 72 126
+  tile 1 90 126
+  tile 1 108 126
+  tile 1 126 126
+  tile 1 144 126
+  tile 1 162 126
+  tile 1 180 126
+  tile 1 198 126
+  tile 1 216 126
+  tile 1 234 126
+  tile 1 252 126
+  tile 1 270 126
+  tile 1 288 126
+  tile 1 306 126
+  tile 1 324 126
+  tile 1 342 126
+  tile 1 360 126
+  tile 1 378 126
+  tile 1 396 126
+  tile 1 414 126
+  tile 1 432 126
+  tile 1 450 126
+  tile 1 468 126
+  tile 1 486 126
+  tile 1 0 144
+  tile 1 18 144
+  tile 1 36 144
+  tile 1 54 144
+  tile 1 72 144
+  tile 1 90 144
+  tile 1 108 144
+  tile 1 126 144
+  tile 1 144 144
+  tile 1 162 144
+  tile 1 180 144
+  tile 1 198 144
+  tile 1 216 144
+  tile 1 234 144
+  tile 1 252 144
+  tile 1 270 144
+  tile 1 288 144
+  tile 1 306 144
+  tile 1 324 144
+  tile 1 342 144
+  tile 1 360 144
+  tile 1 378 144
+  tile 1 396 144
+  tile 1 414 144
+  tile 1 432 144
+  tile 1 450 144
+  tile 1 468 144
+  tile 1 486 144
+  tile 1 0 162
+  tile 1 18 162
+  tile 1 36 162
+  tile 1 54 162
+  tile 1 72 162
+  tile 1 90 162
+  tile 1 108 162
+  tile 1 126 162
+  tile 1 144 162
+  tile 1 162 162
+  tile 1 180 162
+  tile 1 198 162
+  tile 1 216 162
+  tile 1 234 162
+  tile 1 252 162
+  tile 1 270 162
+  tile 1 288 162
+  tile 1 306 162
+  tile 1 324 162
+  tile 1 342 162
+  tile 1 360 162
+  tile 1 378 162
+  tile 1 396 162
+  tile 1 414 162
+  tile 1 432 162
+  tile 1 450 162
+  tile 1 468 162
+  tile 1 486 162
+  tile 1 0 180
+  tile 1 18 180
+  tile 1 36 180
+  tile 1 54 180
+  tile 1 72 180
+  tile 1 90 180
+  tile 1 108 180
+  tile 1 126 180
+  tile 1 144 180
+  tile 1 162 180
+  tile 1 180 180
+  tile 1 198 180
+  tile 1 216 180
+  tile 1 234 180
+  tile 1 252 180
+  tile 1 270 180
+  tile 1 288 180
+  tile 1 306 180
+  tile 1 324 180
+  tile 1 342 180
+  tile 1 360 180
+  tile 1 378 180
+  tile 1 396 180
+  tile 1 414 180
+  tile 1 432 180
+  tile 1 450 180
+  tile 1 468 180
+  tile 1 486 180
+  tile 1 0 198
+  tile 1 18 198
+  tile 1 36 198
+  tile 1 54 198
+  tile 1 72 198
+  tile 1 90 198
+  tile 1 108 198
+  tile 1 126 198
+  tile 1 144 198
+  tile 1 162 198
+  tile 1 180 198
+  tile 1 198 198
+  tile 1 216 198
+  tile 1 234 198
+  tile 1 252 198
+  tile 1 270 198
+  tile 1 288 198
+  tile 1 306 198
+  tile 1 324 198
+  tile 1 342 198
+  tile 1 360 198
+  tile 1 378 198
+  tile 1 396 198
+  tile 1 414 198
+  tile 1 432 198
+  tile 1 450 198
+  tile 1 468 198
+  tile 1 486 198
+  tile 1 0 216
+  tile 1 18 216
+  tile 1 36 216
+  tile 1 54 216
+  tile 1 72 216
+  tile 1 90 216
+  tile 1 108 216
+  tile 1 126 216
+  tile 1 144 216
+  tile 1 162 216
+  tile 1 180 216
+  tile 1 198 216
+  tile 1 216 216
+  tile 1 234 216
+  tile 1 252 216
+  tile 1 270 216
+  tile 1 288 216
+  tile 1 306 216
+  tile 1 324 216
+  tile 1 342 216
+  tile 1 360 216
+  tile 1 378 216
+  tile 1 396 216
+  tile 1 414 216
+  tile 1 432 216
+  tile 1 450 216
+  tile 1 468 216
+  tile 1 486 216
+  tile 1 0 234
+  tile 1 18 234
+  tile 1 36 234
+  tile 1 54 234
+  tile 1 72 234
+  tile 1 90 234
+  tile 1 108 234
+  tile 1 126 234
+  tile 1 144 234
+  tile 1 162 234
+  tile 1 180 234
+  tile 1 198 234
+  tile 1 216 234
+  tile 1 234 234
+  tile 1 252 234
+  tile 1 270 234
+  tile 1 288 234
+  tile 1 306 234
+  tile 1 324 234
+  tile 1 342 234
+  tile 1 360 234
+  tile 1 378 234
+  tile 1 396 234
+  tile 1 414 234
+  tile 1 432 234
+  tile 1 450 234
+  tile 1 468 234
+  tile 1 486 234
+  tile 1 0 252
+  tile 1 18 252
+  tile 1 36 252
+  tile 1 54 252
+  tile 1 72 252
+  tile 1 90 252
+  tile 1 108 252
+  tile 1 126 252
+  tile 1 144 252
+  tile 1 162 252
+  tile 1 180 252
+  tile 1 198 252
+  tile 1 216 252
+  tile 1 234 252
+  tile 1 252 252
+  tile 1 270 252
+  tile 1 288 252
+  tile 1 306 252
+  tile 1 324 252
+  tile 1 342 252
+  tile 1 360 252
+  tile 1 378 252
+  tile 1 396 252
+  tile 1 414 252
+  tile 1 432 252
+  tile 1 450 252
+  tile 1 468 252
+  tile 1 486 252
+  tile 1 0 270
+  tile 1 18 270
+  tile 1 36 270
+  tile 1 54 270
+  tile 1 72 270
+  tile 1 90 270
+  tile 1 108 270
+  tile 1 126 270
+  tile 1 144 270
+  tile 1 162 270
+  tile 1 180 270
+  tile 1 198 270
+  tile 1 216 270
+  tile 1 234 270
+  tile 1 252 270
+  tile 1 270 270
+  tile 1 288 270
+  tile 1 306 270
+  tile 1 324 270
+  tile 1 342 270
+  tile 1 360 270
+  tile 1 378 270
+  tile 1 396 270
+  tile 1 414 270
+  tile 1 432 270
+  tile 1 450 270
+  tile 1 468 270
+  tile 1 486 270
+  tile 1 0 288
+  tile 1 18 288
+  tile 1 36 288
+  tile 1 54 288
+  tile 1 72 288
+  tile 1 90 288
+  tile 1 108 288
+  tile 1 126 288
+  tile 1 144 288
+  tile 1 162 288
+  tile 1 180 288
+  tile 1 198 288
+  tile 1 216 288
+  tile 1 234 288
+  tile 1 252 288
+  tile 1 270 288
+  tile 1 288 288
+  tile 1 306 288
+  tile 1 324 288
+  tile 1 342 288
+  tile 1 360 288
+
+"font.png" varfont 95
+  height 19
+  char 1 425 401 16
+  char 1 425 420 16
+  char 1 425 439 16
+  char 1 0 306 17
+  char 1 17 306 17
+  char 1 34 306 17
+  char 1 51 306 17
+  char 1 425 458 16
+  char 1 425 477 16
+  char 1 408 325 16
+  char 1 408 344 16
+  char 1 408 363 16
+  char 1 408 382 16
+  char 1 408 401 16
+  char 1 408 420 16
+  char 0 481 144 18
+  char 1 68 306 17
+  char 1 85 306 17
+  char 1 102 306 17
+  char 1 119 306 17
+  char 1 136 306 17
+  char 1 153 306 17
+  char 1 170 306 17
+  char 1 187 306 17
+  char 1 204 306 17
+  char 1 221 306 17
+  char 1 408 439 16
+  char 1 408 458 16
+  char 1 408 477 16
+  char 1 391 325 16
+  char 1 391 344 16
+  char 1 238 306 17
+  char 1 255 306 17
+  char 1 272 306 17
+  char 1 289 306 17
+  char 1 306 306 17
+  char 1 323 306 17
+  char 1 340 306 17
+  char 1 357 306 17
+  char 1 374 306 17
+  char 1 391 306 17
+  char 1 408 306 17
+  char 1 425 306 17
+  char 1 442 306 17
+  char 1 459 306 17
+  char 1 476 306 17
+  char 1 493 306 17
+  char 1 493 325 17
+  char 1 493 344 17
+  char 1 493 363 17
+  char 1 493 382 17
+  char 1 493 401 17
+  char 1 493 420 17
+  char 1 493 439 17
+  char 1 493 458 17
+  char 1 493 477 17
+  char 1 476 325 17
+  char 1 476 344 17
+  char 1 476 363 17
+  char 1 391 363 16
+  char 1 476 382 17
+  char 1 391 382 16
+  char 1 391 401 16
+  char 1 476 401 17
+  char 1 391 420 16
+  char 1 476 420 17
+  char 1 476 439 17
+  char 1 476 458 17
+  char 1 476 477 17
+  char 1 459 325 17
+  char 1 459 344 17
+  char 1 459 363 17
+  char 1 459 382 17
+  char 1 459 401 17
+  char 1 459 420 17
+  char 1 459 439 17
+  char 1 459 458 17
+  char 1 459 477 17
+  char 1 442 325 17
+  char 1 442 344 17
+  char 1 442 363 17
+  char 1 442 382 17
+  char 1 442 401 17
+  char 1 442 420 17
+  char 1 442 439 17
+  char 1 442 458 17
+  char 1 442 477 17
+  char 1 425 325 17
+  char 1 425 344 17
+  char 1 425 363 17
+  char 1 425 382 17
+  char 1 391 439 16
+  char 1 391 458 16
+  char 1 391 477 16
+  char 1 374 325 16
+
+"power_pill.png"
+  tile 1 378 288 18 18
+
+"pacman.png" split 4x4
+  size 24 24
+  tile 0 25 0
+  tile 0 49 0
+  tile 0 73 0
+  tile 0 97 0
+  tile 0 121 0
+  tile 0 145 0
+  tile 0 169 0
+  tile 0 193 0
+  tile 0 217 0
+  tile 0 241 0
+  tile 0 265 0
+  tile 0 289 0
+  tile 0 313 0
+  tile 0 337 0
+  tile 0 361 0
+  tile 0 385 0
+
+"blinky.png" split 4x4
+  size 24 24
+  tile 0 409 0
+  tile 0 433 0
+  tile 0 457 0
+  tile 0 481 0
+  tile 0 25 24
+  tile 0 49 24
+  tile 0 73 24
+  tile 0 97 24
+  tile 0 121 24
+  tile 0 145 24
+  tile 0 169 24
+  tile 0 193 24
+  tile 0 217 24
+  tile 0 241 24
+  tile 0 265 24
+  tile 0 289 24
+
+"clyde.png" split 4x4
+  size 24 24
+  tile 0 313 24
+  tile 0 337 24
+  tile 0 361 24
+  tile 0 385 24
+  tile 0 409 24
+  tile 0 433 24
+  tile 0 457 24
+  tile 0 481 24
+  tile 0 25 48
+  tile 0 49 48
+  tile 0 73 48
+  tile 0 97 48
+  tile 0 121 48
+  tile 0 145 48
+  tile 0 169 48
+  tile 0 193 48
+
+"inky.png" split 4x4
+  size 24 24
+  tile 0 217 48
+  tile 0 241 48
+  tile 0 265 48
+  tile 0 289 48
+  tile 0 313 48
+  tile 0 337 48
+  tile 0 361 48
+  tile 0 385 48
+  tile 0 409 48
+  tile 0 433 48
+  tile 0 457 48
+  tile 0 481 48
+  tile 0 25 72
+  tile 0 49 72
+  tile 0 73 72
+  tile 0 97 72
+
+"pinky.png" split 4x4
+  size 24 24
+  tile 0 121 72
+  tile 0 145 72
+  tile 0 169 72
+  tile 0 193 72
+  tile 0 217 72
+  tile 0 241 72
+  tile 0 265 72
+  tile 0 289 72
+  tile 0 313 72
+  tile 0 337 72
+  tile 0 361 72
+  tile 0 385 72
+  tile 0 409 72
+  tile 0 433 72
+  tile 0 457 72
+  tile 0 481 72
+
+"ghost.png" split 4x4
+  size 24 24
+  tile 0 25 96
+  tile 0 49 96
+  tile 0 73 96
+  tile 0 97 96
+  tile 0 121 96
+  tile 0 145 96
+  tile 0 169 96
+  tile 0 193 96
+  tile 0 217 96
+  tile 0 241 96
+  tile 0 265 96
+  tile 0 289 96
+  tile 0 313 96
+  tile 0 337 96
+  tile 0 361 96
+  tile 0 385 96
+
+"eyes.png" split 4x4
+  size 24 24
+  tile 0 409 96
+  tile 0 433 96
+  tile 0 457 96
+  tile 0 481 96
+  tile 0 25 120
+  tile 0 49 120
+  tile 0 73 120
+  tile 0 97 120
+  tile 0 121 120
+  tile 0 145 120
+  tile 0 169 120
+  tile 0 193 120
+  tile 0 217 120
+  tile 0 241 120
+  tile 0 265 120
+  tile 0 289 120
+
+"white.png" split 4x4
+  size 24 24
+  tile 0 313 120
+  tile 0 337 120
+  tile 0 361 120
+  tile 0 385 120
+  tile 0 409 120
+  tile 0 433 120
+  tile 0 457 120
+  tile 0 481 120
+  tile 0 25 144
+  tile 0 49 144
+  tile 0 73 144
+  tile 0 97 144
+  tile 0 121 144
+  tile 0 145 144
+  tile 0 169 144
+  tile 0 193 144
+
+"pacmandeath.png" split 11x1
+  size 24 24
+  tile 0 217 144
+  tile 0 241 144
+  tile 0 265 144
+  tile 0 289 144
+  tile 0 313 144
+  tile 0 337 144
+  tile 0 361 144
+  tile 0 385 144
+  tile 0 409 144
+  tile 0 433 144
+  tile 0 457 144
+
+"cherry.png"
+  tile 0 0 0 25 27
+
